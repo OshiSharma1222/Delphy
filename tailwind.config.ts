@@ -12,7 +12,11 @@ const config: Config = {
   theme: {
   	extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans, system-ui)', 'system-ui', 'sans-serif'],
+        // Display face for the Delphy wordmark. Without this entry Tailwind's
+        // `font-serif` silently falls back to a generic Georgia stack.
+        serif: ['var(--font-serif, Georgia)', 'Georgia', 'serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
   		colors: {
         // The <alpha-value> placeholder enables Tailwind opacity modifiers like

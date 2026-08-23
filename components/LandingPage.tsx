@@ -13,6 +13,7 @@ import type {
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { QuickstartPreCallCard } from './QuickstartPreCallCard';
+import { DelphyAtmosphere } from './DelphyAtmosphere';
 
 // Dynamically import the ConversationComponent with ssr disabled
 const ConversationComponent = dynamic(() => import('./ConversationComponent'), {
@@ -56,6 +57,8 @@ const AgoraProvider = dynamic(
 
 export default function LandingPage() {
   const [showConversation, setShowConversation] = useState(false);
+  // Ensures the agent is only ever asked to stop once per conversation.
+  const endingRef = useRef(false);
 
   // Preload heavy modules on mount so they're already cached when the user
   // clicks "Try it Now" — eliminates the ~1.8s dynamic-import delay.
@@ -75,6 +78,23 @@ export default function LandingPage() {
     setAgentJoinError(false);
 
     try {
+      // 0. Ask for the microphone before anything else. The RTC track is
+      //    otherwise only created after joining, so a denied permission shows
+      //    up as silence mid-conversation instead of a prompt up front.
+      try {
+        const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+        probe.getTracks().forEach((track) => track.stop());
+      } catch (permissionError) {
+        const name = (permissionError as DOMException)?.name;
+        setError(
+          name === 'NotFoundError' || name === 'DevicesNotFoundError'
+            ? 'No microphone found. Connect one, then try again.'
+            : 'Microphone access is blocked. Allow it for this site in your browser, then try again.',
+        );
+        setIsLoading(false);
+        return;
+      }
+
       // 1. Fetch RTC token + channel
       // console.log('Fetching Agora token...');
       const agoraResponse = await fetch('/api/generate-agora-token');
@@ -130,6 +150,7 @@ export default function LandingPage() {
       // 3. All dependencies ready — store state and show conversation
       setRtmClient(rtm);
       setAgoraData({ ...responseData, agentId: agentData?.agent_id });
+      endingRef.current = false;
       setShowConversation(true);
     } catch (err) {
       setError('Failed to start conversation. Please try again.');
@@ -177,19 +198,24 @@ export default function LandingPage() {
   );
 
   const handleEndConversation = async () => {
-    // Stop the AI agent
-    if (agoraData?.agentId) {
+    // Stop the AI agent. Guarded so a double click (or a re-render racing the
+    // click) cannot fire two stop requests for the same agent.
+    if (agoraData?.agentId && !endingRef.current) {
+      endingRef.current = true;
       try {
-        // console.log('Stopping agent:', agoraData.agentId);
         const response = await fetch('/api/stop-conversation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ agent_id: agoraData.agentId }),
         });
         if (!response.ok) {
-          console.error('Failed to stop agent:', await response.text());
+          const detail = await response.text();
+          // Agora returns 409-style ErrConflict when the agent is already
+          // winding down. That is the outcome we asked for, not a failure.
+          if (!/ErrConflict|shutting down/i.test(detail)) {
+            console.error('Failed to stop agent:', detail);
+          }
         }
-        // else console.log('Agent stopped successfully');
       } catch (error) {
         console.error('Error stopping agent:', error);
       }
@@ -203,6 +229,10 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex h-dvh min-h-screen flex-col overflow-hidden bg-background text-foreground">
+      {/* Code-drawn backdrop for the pre-call screen only. Unmounted once the
+          call starts so the in-call UI keeps the canvas (and the GPU) to itself. */}
+      {!showConversation && <DelphyAtmosphere />}
+
       {/* Hero shell: either shows the pre-call CTA or swaps in the live conversation experience. */}
       <div
         className={`flex min-h-0 flex-1 flex-col ${

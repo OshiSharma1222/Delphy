@@ -31,6 +31,7 @@ import {
   normalizeTimestampMs,
   normalizeTranscript,
 } from '@/lib/conversation';
+import { Volume2 } from 'lucide-react';
 import { MicrophoneSelector } from './MicrophoneSelector';
 import {
   getConversationIssueSeverity,
@@ -98,6 +99,10 @@ export default function ConversationComponent({
 }: ConversationComponentProps) {
   const client = useRTCClient();
   const remoteUsers = useRemoteUsers();
+  // The agent is quiet at the SDK default on many output devices. Agora treats
+  // 100 as unity gain and amplifies above it, so start boosted and let the
+  // listener adjust.
+  const [agentVolume, setAgentVolume] = useState(200);
   const [isEnabled, setIsEnabled] = useState(true);
   const [isAgentConnected, setIsAgentConnected] = useState(false);
   const [isConnectionDetailsOpen, setIsConnectionDetailsOpen] = useState(false);
@@ -172,7 +177,42 @@ export default function ConversationComponent({
   // synchronously before the timeout, so only the real second mount's timer fires.
   // Do NOT pass `isEnabled` — that ties track lifetime to mute state and breaks the Web Audio
   // graph inside MicButtonWithVisualizer. Mute uses track.setEnabled() only.
-  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isReady);
+  const { localMicrophoneTrack, error: micError } =
+    useLocalMicrophoneTrack(isReady);
+
+  // A denied permission or missing input device otherwise fails silently:
+  // the agent simply never hears anything and the UI looks healthy.
+  useEffect(() => {
+    if (micError) console.error('Microphone unavailable:', micError);
+  }, [micError]);
+
+  // Diagnostic: reports which device is captured and whether any signal is
+  // arriving. Separates "no permission" from "wrong input device" from
+  // "audio captured but the agent still hears nothing".
+  useEffect(() => {
+    const track = localMicrophoneTrack;
+    if (!track) return;
+
+    console.log(
+      '[mic] device:', track.getTrackLabel?.() ?? 'unknown',
+      '| enabled:', track.enabled,
+      '| muted:', track.muted,
+    );
+
+    let peak = 0;
+    const sample = setInterval(() => {
+      peak = Math.max(peak, track.getVolumeLevel());
+    }, 100);
+    const report = setInterval(() => {
+      console.log('[mic] peak level over last 2s:', peak.toFixed(3));
+      peak = 0;
+    }, 2000);
+
+    return () => {
+      clearInterval(sample);
+      clearInterval(report);
+    };
+  }, [localMicrophoneTrack]);
 
   // ENABLE_AUDIO_PTS is a module-level SDK parameter (not on the client instance).
   // It must be set before publishing audio for transcript timing to be accurate.
@@ -386,6 +426,12 @@ export default function ConversationComponent({
     if (user.uid.toString() === agentUID) setIsAgentConnected(false);
   });
 
+  // Apply playback gain as soon as the agent publishes audio, and again
+  // whenever the listener moves the slider.
+  useEffect(() => {
+    remoteUsers.forEach((user) => user.audioTrack?.setVolume(agentVolume));
+  }, [remoteUsers, agentVolume]);
+
   // Sync isAgentConnected with remoteUsers (covers cases where user-joined/left are missed)
   useEffect(() => {
     const isAgentInRemoteUsers = remoteUsers.some(
@@ -507,6 +553,15 @@ export default function ConversationComponent({
           role="group"
           aria-label="Audio controls"
         >
+          {micError && (
+            <p
+              role="alert"
+              className="max-w-xs text-xs leading-5 text-destructive"
+            >
+              Microphone unavailable &mdash; Delphy cannot hear you. Check the
+              site&apos;s microphone permission, then reload.
+            </p>
+          )}
           <div className="conversation-mic-host flex items-center justify-center">
             <MicButtonWithVisualizer
               isEnabled={isEnabled}
@@ -520,6 +575,20 @@ export default function ConversationComponent({
             />
           </div>
           <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
+
+          <label className="flex items-center gap-2 pl-1 pr-1">
+            <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              type="range"
+              min={50}
+              max={400}
+              step={10}
+              value={agentVolume}
+              onChange={(event) => setAgentVolume(Number(event.target.value))}
+              className="h-1 w-24 cursor-pointer accent-primary"
+              aria-label="Agent playback volume"
+            />
+          </label>
         </div>
       }
       onEndConversation={handleEndConversation}

@@ -26,6 +26,7 @@ export function MicrophoneSelector({
   const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
   const [currentDeviceId, setCurrentDeviceId] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
 
   // Pull the current browser microphone list and reconcile it with the active Agora track.
   const fetchMicrophones = useCallback(async () => {
@@ -34,10 +35,19 @@ export function MicrophoneSelector({
       const AgoraRTC = (await import('agora-rtc-react')).default;
       const microphones = await AgoraRTC.getMicrophones();
 
-      const formattedDevices = microphones.map((device) => ({
-        deviceId: device.deviceId,
-        label: device.label || `Microphone ${device.deviceId.slice(0, 5)}...`,
-      }));
+      // Windows exposes "default" and "communications" as aliases for a real
+      // input. Chrome frequently refuses setDevice() on them, which is why they
+      // appear selectable but capture nothing. Only offer real devices.
+      const formattedDevices = microphones
+        .filter(
+          (device) =>
+            device.deviceId !== 'default' &&
+            device.deviceId !== 'communications',
+        )
+        .map((device) => ({
+          deviceId: device.deviceId,
+          label: device.label || `Microphone ${device.deviceId.slice(0, 5)}...`,
+        }));
 
       setDevices(formattedDevices);
 
@@ -67,12 +77,17 @@ export function MicrophoneSelector({
   const handleDeviceChange = async (deviceId: string) => {
     if (!localMicrophoneTrack) return;
 
+    setSwitchError(null);
     try {
       await localMicrophoneTrack.setDevice(deviceId);
       setCurrentDeviceId(deviceId);
-      // console.log('Microphone device changed to:', deviceId);
     } catch (error) {
+      // Previously swallowed: the picker showed the device as selected while
+      // capture silently stayed on the old one.
       console.error('Error changing microphone device:', error);
+      setSwitchError(
+        'That microphone could not be opened. It may be disabled or in use by another app.',
+      );
     }
   };
 
@@ -161,6 +176,14 @@ export function MicrophoneSelector({
             )}
           </DropdownMenuItem>
         ))}
+        {switchError && (
+          <p
+            role="alert"
+            className="px-2 pb-1.5 pt-2 text-[11px] leading-4 text-destructive"
+          >
+            {switchError}
+          </p>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
