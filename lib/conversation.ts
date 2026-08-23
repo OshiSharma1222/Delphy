@@ -103,7 +103,7 @@ export function normalizeTranscript(
 }
 
 // Returns completed and interrupted turns for the message history list.
-// IN_PROGRESS turns are intentionally excluded — they are rendered separately
+// IN_PROGRESS turns are intentionally excluded, they are rendered separately
 // as a streaming partial bubble via getCurrentInProgressMessage.
 // INTERRUPTED turns must be included: if the agent's first turn is cut off and
 // omitted, messageList stays empty and the first interrupted turn is never shown.

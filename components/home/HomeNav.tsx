@@ -19,7 +19,7 @@ export function HomeNav({ isLoading, onStartConversation }: HomeNavProps) {
         </span>
 
         <div className="flex items-center gap-6">
-          {/* Anchors are hidden on small screens — the page is short enough to scroll. */}
+          {/* Anchors are hidden on small screens, the page is short enough to scroll. */}
           <a
             href="#how-it-works"
             className="hidden text-[13px] text-muted-foreground transition-colors hover:text-foreground sm:block"

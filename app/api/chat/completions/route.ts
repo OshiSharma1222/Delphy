@@ -18,7 +18,7 @@ type ChatCompletionsDeps = {
 /**
  * OpenAI-compatible Chat Completions endpoint backed by Vercel AI SDK.
  *
- * Agora's Conversational AI Engine calls this as its "custom LLM" — sending
+ * Agora's Conversational AI Engine calls this as its "custom LLM", sending
  * standard OpenAI chat completion requests and expecting OpenAI SSE chunks back.
  *
  * Extension point: add RAG retrieval, tool calls, guards, etc. before/after
@@ -32,7 +32,7 @@ export function createChatCompletionsHandler({
     // ── Config ────────────────────────────────────────────────────────────────
     const apiKey = process.env.NEXT_LLM_API_KEY;
     const llmUrl = process.env.NEXT_LLM_URL;
-    // Model is pinned here — change this to switch models without other config changes.
+    // Model is pinned here, change this to switch models without other config changes.
     // Never use body.model; that would allow callers to route to arbitrary models.
     const modelId = 'gpt-4o';
 
@@ -57,7 +57,7 @@ export function createChatCompletionsHandler({
     const openai = createOpenAIClient({ apiKey, baseURL });
 
     const result = streamTextImpl({
-      // modelId is always sourced from the environment — body.model is ignored
+      // modelId is always sourced from the environment, body.model is ignored
       model: openai(modelId),
       messages: (body.messages ?? []) as NonNullable<
         Parameters<typeof streamText>[0]['messages']

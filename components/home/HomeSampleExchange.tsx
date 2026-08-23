@@ -1,18 +1,18 @@
-// Illustrative, not a recording — it exists to show the shape of the pressure:
+// Illustrative, not a recording, it exists to show the shape of the pressure:
 // every Delphy turn is a question, and each one targets the previous answer.
 const EXCHANGE = [
   { speaker: 'delphy', line: 'What topic are you bringing me today?' },
   { speaker: 'you', line: 'Remote work makes engineering teams more productive.' },
   {
     speaker: 'delphy',
-    line: 'Productive at what — output per person, or the things that only happen when people overlap?',
+    line: 'Productive at what: output per person, or the things that only happen when people overlap?',
   },
   { speaker: 'you', line: 'Output per person. Our closed-ticket count went up.' },
   { speaker: 'delphy', line: 'Did the tickets get smaller?' },
   { speaker: 'you', line: '...possibly. We did start splitting them up.' },
   {
     speaker: 'delphy',
-    line: 'So which number moved — the work, or the way you count it?',
+    line: 'So which number moved, the work, or the way you count it?',
   },
 ] as const;
 

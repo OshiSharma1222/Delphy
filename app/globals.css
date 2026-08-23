@@ -28,19 +28,19 @@
   --foreground:       220 25% 12%;
   --muted-foreground: 220 10% 42%;
 
-  /* Brand — Agora cyan */
+  /* Brand, Agora cyan */
   --primary:            194 100% 42%;
   --primary-foreground: 220 25% 12%;
 
-  /* Secondary — quiet surface-level control */
+  /* Secondary, quiet surface-level control */
   --secondary:            220 14% 94%;
   --secondary-foreground: 220 25% 12%;
 
-  /* Accent — same hue as primary */
+  /* Accent, same hue as primary */
   --accent:            194 100% 42%;
   --accent-foreground: 220 25% 12%;
 
-  /* Destructive — end call, error states only */
+  /* Destructive, end call, error states only */
   --destructive:            0 72% 52%;
   --destructive-foreground: 0 0% 100%;
 
@@ -68,7 +68,7 @@
   --sidebar-ring:               194 100% 42%;
 
   /*
-   * AgentVisualizer: same order as dark — cool/primary at bar bottom, soft mid, purple at top.
+   * AgentVisualizer: same order as dark, cool/primary at bar bottom, soft mid, purple at top.
    * Light: blue ≈ cyan role; dark: overridden below (cyan → soft → purple).
    */
   --viz-stop-1: 225 92% 50%;
@@ -201,7 +201,7 @@ body {
 :root {
   color-scheme: light;
 
-  /* Canvas — a hair warm so it reads as paper rather than screen white. */
+  /* Canvas, a hair warm so it reads as paper rather than screen white. */
   --background:       36 30% 99%;
   --surface:          36 24% 97%;
   --surface-elevated: 0 0% 100%;
@@ -212,7 +212,7 @@ body {
   --popover-foreground: 24 10% 12%;
   --muted:            36 20% 96%;
 
-  /* Hairlines. Deliberately faint — structure comes from space, not borders. */
+  /* Hairlines. Deliberately faint, structure comes from space, not borders. */
   --border:           30 12% 89%;
   --input:            30 12% 89%;
 
@@ -253,7 +253,7 @@ body {
   }
 }
 
-/* Hairline that fades at both ends — separates bands without boxing them in. */
+/* Hairline that fades at both ends, separates bands without boxing them in. */
 .home-divider {
   height: 1px;
   background: linear-gradient(

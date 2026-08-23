@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Delphy',
   description:
-    "A voice-native devil's advocate that will not tell you what it thinks. Bring a position and defend it — Delphy only ever asks questions.",
+    "A voice-native devil's advocate that will not tell you what it thinks. Bring a position and defend it. Delphy only ever asks questions.",
   icons: {
     icon: [
       { url: '/favicon.ico' },

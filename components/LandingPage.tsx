@@ -60,7 +60,7 @@ export default function LandingPage() {
   const endingRef = useRef(false);
 
   // Preload heavy modules on mount so they're already cached when the user
-  // clicks "Try it Now" — eliminates the ~1.8s dynamic-import delay.
+  // clicks "Try it Now", eliminates the ~1.8s dynamic-import delay.
   useEffect(() => {
     import('agora-rtc-react').catch(() => {});
     import('agora-rtm').catch(() => {});
@@ -106,7 +106,7 @@ export default function LandingPage() {
         );
       }
 
-      // 2. Run agent invite and RTM setup in parallel — both only need the token response.
+      // 2. Run agent invite and RTM setup in parallel, both only need the token response.
       //    RTM must be ready before ConversationComponent mounts so AgoraVoiceAI
       //    can subscribe immediately. Agent invite is non-fatal.
       const [agentData, rtm] = await Promise.all([
@@ -146,7 +146,7 @@ export default function LandingPage() {
         })(),
       ]);
 
-      // 3. All dependencies ready — store state and show conversation
+      // 3. All dependencies ready, store state and show conversation
       setRtmClient(rtm);
       setAgoraData({ ...responseData, agentId: agentData?.agent_id });
       endingRef.current = false;
@@ -220,7 +220,7 @@ export default function LandingPage() {
       }
     }
 
-    // Tear down RTM — owned here since we created it here
+    // Tear down RTM, owned here since we created it here
     rtmClient?.logout().catch((err) => console.error('RTM logout error:', err));
     setRtmClient(null);
     setShowConversation(false);

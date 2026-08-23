@@ -16,10 +16,10 @@ export const STRICTER_INSTRUCTION =
 export const FALLBACK_QUESTION = 'What answer are you expecting me to give here?';
 
 /** Spoken when the user has gone quiet. */
-export const IDLE_NUDGE = 'Still there — want to take another shot at that?';
+export const IDLE_NUDGE = 'Still there? Want to take another shot at that?';
 
 /** Spoken when a judge or generation call fails, so the session never stalls. */
-export const STALL_QUESTION = 'Give me a second — what was your strongest point again?';
+export const STALL_QUESTION = 'Give me a second. What was your strongest point again?';
 
 /**
  * Openers that assert a position before the question mark ever arrives.

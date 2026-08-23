@@ -26,7 +26,7 @@ export function HomeHero({
 
       <p className="animate-fade-up animate-fade-up-d2 mx-auto mt-7 max-w-xl text-balance text-[16px] leading-8 text-muted-foreground">
         Bring a position you actually hold and say it out loud. Delphy answers
-        only in questions &mdash; and goes straight for the weakest thing you
+        only in questions, and goes straight for the weakest thing you
         just said.
       </p>
 

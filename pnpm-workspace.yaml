@@ -1,5 +1,5 @@
 # Single-package repo. pnpm still requires `packages` whenever this file
-# exists — without it every `pnpm install` / `pnpm run` fails with
+# exists, without it every `pnpm install` / `pnpm run` fails with
 # ERR_PNPM_INVALID_WORKSPACE_CONFIGURATION.
 packages:
   - .

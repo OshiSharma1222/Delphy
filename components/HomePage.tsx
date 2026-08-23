@@ -14,8 +14,8 @@ type HomePageProps = {
 };
 
 /**
- * The marketing surface. Scrolls normally — unlike the in-call view, which is
- * pinned to the viewport — so the root here must not clamp height or hide
+ * The marketing surface. Scrolls normally, unlike the in-call view, which is
+ * pinned to the viewport, so the root here must not clamp height or hide
  * overflow.
  */
 export function HomePage({

@@ -12,7 +12,7 @@ const STEPS = [
   {
     n: '03',
     title: 'One verdict',
-    body: 'Hold up across three rounds and you get the only statement it will ever make — right at the end.',
+    body: 'Hold up across three rounds and you get the only statement it will ever make, right at the end.',
   },
 ];
 

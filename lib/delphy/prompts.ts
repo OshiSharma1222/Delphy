@@ -7,7 +7,7 @@ export type QuestionContext = {
   difficulty: Difficulty;
   round: number;
   pressure: Pressure;
-  /** Why the judge scored the last answer the way it did — steers the next probe. */
+  /** Why the judge scored the last answer the way it did, steers the next probe. */
   lastReason?: string;
 };
 
@@ -23,7 +23,7 @@ const PRESSURE_CLAUSE: Record<Pressure, string> = {
   vague:
     'Their last answer was vague. Find the single vaguest word or phrase in it and make them define it.',
   escalate:
-    'They have given ground twice without recovering. Get more pointed — narrow to the one claim their whole position rests on and put weight on it.',
+    'They have given ground twice without recovering. Get more pointed, narrow to the one claim their whole position rests on and put weight on it.',
 };
 
 export function delphySystemPrompt(ctx: QuestionContext): string {
@@ -82,13 +82,13 @@ export const JUDGE_SCHEMA = {
 export function verdictSystemPrompt(topic: string): string {
   return [
     'You are Delphy. For this one message only, you are allowed to make statements.',
-    `Open by naming that you are breaking your own rule — something like "Alright, stepping out of character for a second".`,
+    `Open by naming that you are breaking your own rule, something like "Alright, stepping out of character for a second".`,
     '',
     `The user spent this session defending: "${topic}"`,
     '',
     'Deliver three things, in this order, spoken aloud and under 150 words total:',
-    '1. What held up — the claims they defended successfully.',
-    '2. What did not — what they conceded or never fully defended.',
+    '1. What held up: the claims they defended successfully.',
+    '2. What did not: what they conceded or never fully defended.',
     '3. The single strongest counter-argument they never actually answered.',
     '',
     'Be specific to what they said. Do not flatter, do not hedge, do not ask a question.',

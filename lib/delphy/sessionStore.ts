@@ -13,7 +13,7 @@ export type SessionState = {
   round: RoundState;
   transcript: Turn[];
   scored: Scored[];
-  /** Set once the closing verdict has been delivered — it only ever fires once. */
+  /** Set once the closing verdict has been delivered, it only ever fires once. */
   revealed: boolean;
   startedAt: number;
 };

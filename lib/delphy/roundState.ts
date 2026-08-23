@@ -2,7 +2,7 @@
  * Delphy round progression.
  *
  * Answering well unlocks harder rounds; faltering keeps you in place while
- * Delphy gets more pointed. Pure functions only — no I/O, no LLM calls.
+ * Delphy gets more pointed. Pure functions only, no I/O, no LLM calls.
  */
 
 export type Verdict = 'held' | 'hedged' | 'conceded';
@@ -21,7 +21,7 @@ export type RoundState = {
 
 export type Transition = {
   state: RoundState;
-  /** The round advanced — the frontend shows a pip unlocking. */
+  /** The round advanced, the frontend shows a pip unlocking. */
   unlocked: boolean;
   /** Delphy should sharpen its tone without advancing the round. */
   escalated: boolean;
@@ -71,7 +71,7 @@ export function applyVerdict(state: RoundState, verdict: Verdict): Transition {
     };
   }
 
-  // hedged | conceded — no advancement, only pressure.
+  // hedged | conceded, no advancement, only pressure.
   const strikes = state.strikes + 1;
   const escalated = strikes >= STRIKES_TO_ESCALATE;
 

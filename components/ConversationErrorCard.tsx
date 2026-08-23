@@ -33,7 +33,7 @@ function getEffectiveIssueCode(issue: ConnectionIssue): string {
 }
 
 // Classifies an issue as "warning" (transient, self-resolving) or "error" (action required).
-// Rate-limit (429), timeout (408), and conflict (409) errors are transient — the status dot
+// Rate-limit (429), timeout (408), and conflict (409) errors are transient, the status dot
 // stays amber rather than red so the developer isn't alarmed by momentary backpressure.
 export function getConversationIssueSeverity(
   issue: ConnectionIssue

@@ -6,7 +6,7 @@ export function HomeFooter() {
       <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-6 px-6 py-10 sm:flex-row">
         <p className="text-[13px] text-muted-foreground">
           <span className="font-serif text-base text-foreground">Delphy</span>
-          {' — it only ever asks.'}
+          {', it only ever asks.'}
         </p>
 
         <div className="flex items-center gap-2 text-muted-foreground">

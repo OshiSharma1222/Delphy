@@ -33,6 +33,8 @@ import {
 } from '@/lib/conversation';
 import { Volume2 } from 'lucide-react';
 import { MicrophoneSelector } from './MicrophoneSelector';
+import { SpeakerSelector } from './SpeakerSelector';
+import type { IRemoteAudioTrack } from 'agora-rtc-react';
 import {
   getConversationIssueSeverity,
   type ConnectionIssue,
@@ -113,7 +115,7 @@ export default function ConversationComponent({
   const agentUID = String(DEFAULT_AGENT_UID);
   const [joinedUID, setJoinedUID] = useState<UID>(0);
 
-  // Transcript + agent state — managed with AgoraVoiceAI (see effect below).
+  // Transcript + agent state, managed with AgoraVoiceAI (see effect below).
   const [rawTranscript, setRawTranscript] = useState<
     TranscriptHelperItem<Partial<UserTranscription | AgentTranscription>>[]
   >([]);
@@ -171,11 +173,11 @@ export default function ConversationComponent({
   );
 
   // Create mic track only after the StrictMode fake-unmount cycle completes (isReady).
-  // Passing `true` here creates two tracks in StrictMode — the first publishes, then
+  // Passing `true` here creates two tracks in StrictMode, the first publishes, then
   // StrictMode cleanup closes it and the second takes over, causing a ~3s audio gap.
   // isReady uses the same setTimeout(fn,0) pattern as useJoin: StrictMode cleanup fires
   // synchronously before the timeout, so only the real second mount's timer fires.
-  // Do NOT pass `isEnabled` — that ties track lifetime to mute state and breaks the Web Audio
+  // Do NOT pass `isEnabled`, that ties track lifetime to mute state and breaks the Web Audio
   // graph inside MicButtonWithVisualizer. Mute uses track.setEnabled() only.
   const { localMicrophoneTrack, error: micError } =
     useLocalMicrophoneTrack(isReady);
@@ -398,7 +400,7 @@ export default function ConversationComponent({
     };
   }, [rtmClient, addConnectionIssue]);
 
-  // The toolkit uses uid="0" for local user speech — remap to actual RTC UID
+  // The toolkit uses uid="0" for local user speech, remap to actual RTC UID
   // so the transcript panel renders user messages on the correct side.
   // Also normalize punctuation spacing for display when upstream text arrives compacted.
   const transcript = useMemo(() => {
@@ -406,7 +408,7 @@ export default function ConversationComponent({
   }, [rawTranscript, client.uid]);
 
   // Completed (END + INTERRUPTED) messages shown as history.
-  // INTERRUPTED must be included — if the agent's first turn is cut off,
+  // INTERRUPTED must be included, if the agent's first turn is cut off,
   // messageList stays empty and the first interrupted turn is never shown.
   const messageList = useMemo(() => getMessageList(transcript), [transcript]);
 
@@ -426,11 +428,30 @@ export default function ConversationComponent({
     if (user.uid.toString() === agentUID) setIsAgentConnected(false);
   });
 
+  // The agent's published audio, used for both gain and output routing.
+  const remoteAudioTracks = useMemo(
+    () =>
+      remoteUsers
+        .map((user) => user.audioTrack)
+        .filter((track): track is IRemoteAudioTrack => Boolean(track)),
+    [remoteUsers],
+  );
+
   // Apply playback gain as soon as the agent publishes audio, and again
   // whenever the listener moves the slider.
   useEffect(() => {
-    remoteUsers.forEach((user) => user.audioTrack?.setVolume(agentVolume));
-  }, [remoteUsers, agentVolume]);
+    remoteAudioTracks.forEach((track) => track.setVolume(agentVolume));
+  }, [remoteAudioTracks, agentVolume]);
+
+  // Diagnostic: distinguishes "the agent never published audio" from
+  // "audio is published but routed to a device you are not wearing".
+  useEffect(() => {
+    console.log(
+      '[audio] remote users:', remoteUsers.length,
+      '| agent audio tracks:', remoteAudioTracks.length,
+      '| gain:', agentVolume,
+    );
+  }, [remoteUsers.length, remoteAudioTracks.length, agentVolume]);
 
   // Sync isAgentConnected with remoteUsers (covers cases where user-joined/left are missed)
   useEffect(() => {
@@ -475,7 +496,7 @@ export default function ConversationComponent({
   );
 
   /**
-   * Mute/unmute via track.setEnabled() only — usePublish owns publish state.
+   * Mute/unmute via track.setEnabled() only, usePublish owns publish state.
    * If we also unpublish in the toggle, usePublish and the button fight each other
    * and break the MicButtonWithVisualizer Web Audio graph.
    */
@@ -558,7 +579,7 @@ export default function ConversationComponent({
               role="alert"
               className="max-w-xs text-xs leading-5 text-destructive"
             >
-              Microphone unavailable &mdash; Delphy cannot hear you. Check the
+              Microphone unavailable, Delphy cannot hear you. Check the
               site&apos;s microphone permission, then reload.
             </p>
           )}
@@ -575,6 +596,8 @@ export default function ConversationComponent({
             />
           </div>
           <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
+
+          <SpeakerSelector audioTracks={remoteAudioTracks} />
 
           <label className="flex items-center gap-2 pl-1 pr-1">
             <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
