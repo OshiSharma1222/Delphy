@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Loader2, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -61,6 +62,20 @@ export function HomeHero({
             {error}
           </p>
         )}
+      </div>
+
+      {/* The face-off closes the hero. Background was cut to transparency so the
+          figures sit on the canvas directly rather than in a white box. */}
+      <div className="animate-fade-up animate-fade-up-d3 mt-16 flex justify-center">
+        <Image
+          src="/delphy-face-off.webp"
+          alt="A man and a robot facing each other at eye level"
+          width={720}
+          height={480}
+          priority
+          sizes="(max-width: 640px) 92vw, 36rem"
+          className="h-auto w-full max-w-xl"
+        />
       </div>
     </section>
   );
