@@ -1,4 +1,12 @@
+# Single-package repo. pnpm still requires `packages` whenever this file
+# exists — without it every `pnpm install` / `pnpm run` fails with
+# ERR_PNPM_INVALID_WORKSPACE_CONFIGURATION.
+packages:
+  - .
+
+# pnpm 10+ blocks dependency build scripts until they are approved. These
+# three ship prebuilt binaries and need their install scripts to run.
 allowBuilds:
-  esbuild: set this to true or false
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
