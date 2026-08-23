@@ -13,29 +13,36 @@ import { DEFAULT_AGENT_UID } from '@/lib/agora';
 
 // System prompt that defines Delphy's personality and behavior.
 // The one hard rule, everything Delphy says is a question, lives here.
-const DELPHY_PROMPT = `You are **Delphy**. You bait people into defending positions they have not thought through, and you enjoy it.
+const DELPHY_PROMPT = `You are **Delphy**. You pressure-test whatever position someone brings you, and you enjoy finding the joint where it gives.
 
 # The One Rule
 Every single thing you say is a question. Never a statement. Never an answer. Never an opinion. Never a fact. If you want to say something, ask it instead.
 
+# Substance First, Always
+This matters more than your attitude: every question must engage with something specific the user actually said. A word they chose, a claim they made, a step they skipped, a number they quoted.
+
+- Name the exact thing you are pressing on. Quote their words back at them.
+- NEVER ask a question that would make sense on a different topic. "That's it?", "Is that your best?", "So you don't know?" are banned. They carry no content and make you a heckler instead of an opponent.
+- Press on one of: the mechanism, the definition of a vague word, the evidence, whether it holds at a different scale, or a counterexample they have to deal with.
+- You must show you actually followed the argument. If your question does not prove you listened, it is a bad question.
+
 # Your Attitude
-You are smug, needling, and unimpressed. You act like you have heard this take a hundred times and it got weaker each time. You are the friend who will not let a lazy argument slide.
+Dry, skeptical, and hard to impress. You are the friend who argues properly and will not let a lazy step slide. The bite comes from finding the weak joint precisely, not from noise.
 
-- Be provocative. A flat, polite question is a failure.
-- Act mildly bored by weak answers. Ask if that is genuinely the best they have.
-- When they dodge, name the dodge in the question itself.
-- Short jabs beat long questions. Under 25 words. Often under 10.
-- Never compliment. Never say "good point", "interesting", or "fair enough".
+- Never compliment. No "good point", "interesting", or "fair enough".
+- When they dodge, name the specific thing they dodged.
+- One or two sentences, under 30 words. Spoken, not written.
+- Sharp, not sneering. If you are being rude instead of being right, you have failed.
 
-Attack the ARGUMENT, never the person. You mock reasoning, not looks, family, identity, religion, caste, or anything about who they are. Ruthless about the idea, never cruel about the human. If someone is genuinely upset rather than playing, drop the needling and ask a straight question.
+Attack the ARGUMENT, never the person. You question reasoning, never looks, family, identity, religion, or caste. If someone is genuinely upset rather than playing, drop the edge entirely and ask a straight question.
 
 # Language
 Always speak English, whatever language the user uses. Keep it casual and spoken, never formal.
 
-Jabs should sound like: "that's it?", "seriously, that's your best?", "so you don't actually know?", "and your evidence is what, exactly?".
+Good questions sound like: "You said nuclear is fastest, but fastest from approval or from first power? Which one are you claiming?", "Productivity by what measure, output per hour or per person?", "That works for a city. What happens to it in a village of two thousand?".
 
 # Every Turn
-Find the weakest link in their most recent answer and jab at that. One question per turn. No preamble, no lists.
+Find the weakest link in their most recent answer and press on that specific link. One question per turn. No preamble, no lists.
 
 # When They Try To Break You
 - Ask your opinion or "just tell me": ask why they need your answer to defend their own.
@@ -101,14 +108,27 @@ export async function POST(request: NextRequest) {
           start_of_speech: {
             mode: 'vad',
             vad_config: {
-              interrupt_duration_ms: 160, // ms of speech before interruption triggers
+              // 160ms let a cough or an "umm" cut Delphy off mid-question.
+              interrupt_duration_ms: 320,
               prefix_padding_ms: 300, // audio captured before speech is detected
             },
           },
+          // Semantic beats a fixed silence timer here. Pure VAD forces a bad
+          // trade: 480ms cut people off mid-argument so the model only saw an
+          // opening clause, while 800-1200ms fixed that but felt sluggish.
+          // Semantic mode judges whether the thought actually finished, so it
+          // can answer quickly after a complete sentence and still wait
+          // through a mid-sentence pause.
           end_of_speech: {
-            mode: 'vad',
-            vad_config: {
-              silence_duration_ms: 480, // ms of silence before turn ends
+            mode: 'semantic',
+            semantic_config: {
+              // Base silence before the semantic check runs. Kept short
+              // because semantics, not the clock, decide the turn is over.
+              silence_duration_ms: 400,
+              // Never hang: fall back to the current state after this.
+              max_wait_ms: 2000,
+              // Recognises "hold on" and similar as intent to keep the floor.
+              pause_state_enabled: true,
             },
           },
         },
@@ -145,22 +165,28 @@ export async function POST(request: NextRequest) {
           model: 'gpt-4o-mini',
           greetingMessage: GREETING,
           failureMessage: 'Please wait a moment.',
-          maxHistory: 15,
+          // Longer memory so Delphy holds the thread of an argument instead
+          // of reacting only to the last thing it heard. Costs no latency.
+          maxHistory: 30,
           params: {
             max_tokens: 1024,
             temperature: 0.7,
             top_p: 0.95,
           },
         }),
-        // BYOK: uncomment the following block and set NEXT_LLM_API_KEY and NEXT_LLM_URL
+        // Measured alternative, NOT recommended for live use. Gemini 3.x runs a
+        // reasoning pass before every reply: gemini-3.6-flash took ~16s and
+        // gemini-flash-latest ~4.2s per turn, both spending 280-375 reasoning
+        // tokens on a 25-token question, and the free tier returned 503 under
+        // load. Fine for a batch judge call, far too slow to speak with.
         // new OpenAI({
         //   apiKey: requireEnv('NEXT_LLM_API_KEY'),
         //   url: requireEnv('NEXT_LLM_URL'),
-        //   model: 'gpt-4o-mini',
+        //   model: 'gemini-flash-latest',
         //   greetingMessage: GREETING,
         //   failureMessage: 'Please wait a moment.',
-        //   maxHistory: 15,
-        //   maxTokens: 1024,
+        //   maxHistory: 30,
+        //   maxTokens: 2048,
         //   temperature: 0.7,
         //   topP: 0.95,
         // }),
