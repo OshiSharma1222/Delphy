@@ -12,8 +12,7 @@ import type {
 } from '../types/conversation';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
-import { QuickstartPreCallCard } from './QuickstartPreCallCard';
-import { DelphyAtmosphere } from './DelphyAtmosphere';
+import { HomePage } from './HomePage';
 
 // Dynamically import the ConversationComponent with ssr disabled
 const ConversationComponent = dynamic(() => import('./ConversationComponent'), {
@@ -227,38 +226,27 @@ export default function LandingPage() {
     setShowConversation(false);
   };
 
+  // Pre-call: the marketing homepage, free to scroll.
+  if (!showConversation) {
+    return (
+      <HomePage
+        isLoading={isLoading}
+        error={error}
+        onStartConversation={handleStartConversation}
+      />
+    );
+  }
+
+  // In call: pinned to the viewport, no page scroll.
   return (
     <div className="relative flex h-dvh min-h-screen flex-col overflow-hidden bg-background text-foreground">
-      {/* Code-drawn backdrop for the pre-call screen only. Unmounted once the
-          call starts so the in-call UI keeps the canvas (and the GPU) to itself. */}
-      {!showConversation && <DelphyAtmosphere />}
-
-      {/* Hero shell: either shows the pre-call CTA or swaps in the live conversation experience. */}
-      <div
-        className={`flex min-h-0 flex-1 flex-col ${
-          showConversation
-            ? 'items-stretch justify-start'
-            : 'items-center justify-center'
-        }`}
-      >
-        <div
-          className={`z-10 flex min-h-0 flex-1 flex-col ${
-            showConversation
-              ? 'h-full w-full max-w-none items-stretch gap-0 px-0 text-left'
-              : 'w-full max-w-none items-center justify-center px-4 text-center'
-          }`}
-        >
-          {!showConversation ? (
-            <QuickstartPreCallCard
-              isLoading={isLoading}
-              error={error}
-              onStartConversation={handleStartConversation}
-            />
-          ) : agoraData && rtmClient ? (
+      <div className="flex min-h-0 flex-1 flex-col items-stretch justify-start">
+        <div className="z-10 flex h-full min-h-0 w-full max-w-none flex-1 flex-col items-stretch gap-0 px-0 text-left">
+          {agoraData && rtmClient ? (
             <>
               {/* Non-fatal invite warning: the browser session can still render even if agent start failed. */}
               {agentJoinError && (
-                <div className="p-3 bg-destructive/10 rounded-md text-destructive text-sm max-w-sm">
+                <div className="mx-auto mt-3 max-w-sm rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                   Failed to connect with AI agent. The conversation may not work
                   as expected.
                 </div>
@@ -286,17 +274,17 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Persistent attribution footer for the pre-call and in-call views. */}
+      {/* Persistent attribution while the call is live. */}
       <footer className="fixed bottom-0 right-0 z-40 py-4 pr-4 md:py-6 md:pr-6">
         <div className="flex items-center justify-end gap-2 text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide uppercase">
+          <span className="text-xs font-medium uppercase tracking-wide">
             Powered by
           </span>
           <a
             href="https://agora.io/en/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
+            className="transition-colors hover:text-primary"
             aria-label="Visit Agora's website"
           >
             <Image
@@ -305,7 +293,7 @@ export default function LandingPage() {
               width={86}
               height={24}
               priority
-              className="h-6 w-auto hover:opacity-80 transition-opacity translate-y-1"
+              className="h-6 w-auto translate-y-1 transition-opacity hover:opacity-80"
             />
             <span className="sr-only">Agora</span>
           </a>

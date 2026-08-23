@@ -75,9 +75,8 @@
   --viz-stop-2: 220 14% 78%;
   --viz-stop-3: 285 58% 48%;
 
-  /* Font — --font-sans / --font-serif are injected on <html> by next/font
-     (see app/layout.tsx). Declaring them here too would shadow those at equal
-     specificity, so the fallback lives in the body rule instead. */
+  /* Font */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -139,7 +138,7 @@
 }
 
 body {
-  font-family: var(--font-sans, system-ui), -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
 }
@@ -195,182 +194,96 @@ body {
 }
 
 /* --- Delphy palette -------------------------------------------------------
-   Applied unconditionally so the room is always dark, regardless of OS theme.
-   Near-black canvas, warm off-white type, a single ember accent. --------- */
+   Light by design, applied unconditionally so the OS theme never flips it.
+   Paper-white canvas, ink text, hairline rules, one ember accent. Declared
+   after the base token sets above so these win at equal specificity. ----- */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --background:       240 6% 6%;
-  --surface:          240 5% 9%;
-  --surface-elevated: 240 5% 12%;
+  /* Canvas — a hair warm so it reads as paper rather than screen white. */
+  --background:       36 30% 99%;
+  --surface:          36 24% 97%;
+  --surface-elevated: 0 0% 100%;
 
-  --card:             240 5% 9%;
-  --card-foreground:  40 12% 94%;
-  --popover:          240 5% 12%;
-  --popover-foreground: 40 12% 94%;
-  --muted:            240 5% 12%;
+  --card:             0 0% 100%;
+  --card-foreground:  24 10% 12%;
+  --popover:          0 0% 100%;
+  --popover-foreground: 24 10% 12%;
+  --muted:            36 20% 96%;
 
-  --border:           240 5% 16%;
-  --input:            240 5% 16%;
+  /* Hairlines. Deliberately faint — structure comes from space, not borders. */
+  --border:           30 12% 89%;
+  --input:            30 12% 89%;
 
-  --foreground:       40 12% 94%;
-  --muted-foreground: 240 5% 55%;
+  --foreground:       24 10% 12%;
+  --muted-foreground: 26 6% 44%;
 
-  --primary:            33 96% 58%;
-  --primary-foreground: 240 8% 7%;
+  /* Ember. Held at 41% lightness so white text on it clears 4.5:1. */
+  --primary:            18 88% 41%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary:            240 5% 12%;
-  --secondary-foreground: 40 12% 94%;
+  --secondary:            36 20% 96%;
+  --secondary-foreground: 24 10% 12%;
 
-  --accent:            33 96% 58%;
-  --accent-foreground: 240 8% 7%;
+  --accent:            18 88% 41%;
+  --accent-foreground: 0 0% 100%;
 
-  --ring: 33 96% 58%;
+  --destructive:            0 70% 45%;
+  --destructive-foreground: 0 0% 100%;
 
-  --viz-stop-1: 33 96% 58%;
-  --viz-stop-2: 18 80% 60%;
-  --viz-stop-3: 350 60% 60%;
+  --ring: 18 88% 41%;
+
+  --viz-stop-1: 18 88% 45%;
+  --viz-stop-2: 26 40% 72%;
+  --viz-stop-3: 24 10% 20%;
 }
 
-/* --- The room -------------------------------------------------------------
-   Delphy's stage is drawn entirely in code: an ember bloom, a breathing orb,
-   film grain and a vignette. No image assets, so nothing to load and nothing
-   to go blurry on a wide display. All of it is decorative and inert. ------ */
+/* --- Homepage ------------------------------------------------------------ */
 
-/* Photographic grain. feTurbulence at a high base frequency reads as film
-   stock rather than a tiling pattern, which is what keeps flat dark UI from
-   looking like a plain CSS gradient. Inlined so it costs no request. */
-:root {
-  --delphy-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+/* Section rhythm: one variable so every band breathes identically. */
+.home-section {
+  padding-top: 5.5rem;
+  padding-bottom: 5.5rem;
 }
-
-.delphy-atmosphere {
-  /* Sits behind everything; never intercepts a click or a screen reader. */
-  background-color: hsl(var(--background));
-}
-
-/* The lamp: a single warm source high in the frame. */
-.delphy-bloom {
-  background: radial-gradient(
-    closest-side,
-    hsl(var(--primary) / 0.3),
-    hsl(var(--primary) / 0.1) 45%,
-    transparent 72%
-  );
-  filter: blur(56px);
-  animation: delphy-breathe 9s ease-in-out infinite;
-}
-
-/* A second, cooler source low and off-centre so the field is not symmetrical. */
-.delphy-counterlight {
-  background: radial-gradient(
-    closest-side,
-    hsl(var(--viz-stop-3) / 0.16),
-    transparent 70%
-  );
-  filter: blur(72px);
-  animation: delphy-breathe 13s ease-in-out infinite reverse;
-}
-
-.delphy-grain {
-  background-image: var(--delphy-grain);
-  background-size: 160px 160px;
-  opacity: 0.055;
-}
-
-.delphy-vignette {
-  background: radial-gradient(
-    ellipse 118% 88% at 50% 34%,
-    transparent 22%,
-    hsl(240 8% 3% / 0.5) 76%,
-    hsl(240 8% 3% / 0.88) 100%
-  );
-}
-
-/* --- Orb ---------------------------------------------------------------- */
-
-/* SVG transforms default to a 0,0 origin — fill-box re-centres them so the
-   rings rotate about the orb rather than swinging around the corner. */
-.delphy-orb-core,
-.delphy-orb-ring-a,
-.delphy-orb-ring-b {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.delphy-orb-core {
-  animation: delphy-breathe 9s ease-in-out infinite;
-}
-.delphy-orb-ring-a {
-  animation: delphy-drift 64s linear infinite;
-}
-.delphy-orb-ring-b {
-  animation: delphy-drift 96s linear infinite reverse;
-}
-
-@keyframes delphy-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.82;
-  }
-  50% {
-    transform: scale(1.055);
-    opacity: 1;
+@media (min-width: 768px) {
+  .home-section {
+    padding-top: 7.5rem;
+    padding-bottom: 7.5rem;
   }
 }
 
-@keyframes delphy-drift {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* --- Call to action ------------------------------------------------------ */
-
-.delphy-cta {
-  box-shadow: 0 12px 32px -14px hsl(var(--primary) / 0.55);
-  transition:
-    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 160ms ease;
-}
-.delphy-cta:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 26px -6px hsl(var(--primary) / 0.5),
-    0 16px 36px -14px hsl(var(--primary) / 0.65);
-}
-.delphy-cta:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* A hairline that fades out at both ends — used to flank the eyebrow. */
-.delphy-rule {
+/* Hairline that fades at both ends — separates bands without boxing them in. */
+.home-divider {
+  height: 1px;
   background: linear-gradient(
     to right,
     transparent,
-    hsl(var(--border)) 45%,
-    hsl(var(--border)) 55%,
+    hsl(var(--border)),
     transparent
   );
 }
 
-/* Honour the OS setting: keep the composition, drop the movement. */
+.home-cta {
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms ease;
+  box-shadow: 0 1px 2px hsl(24 10% 12% / 0.08);
+}
+.home-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -6px hsl(var(--primary) / 0.45);
+}
+.home-cta:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .delphy-bloom,
-  .delphy-counterlight,
-  .delphy-orb-core,
-  .delphy-orb-ring-a,
-  .delphy-orb-ring-b,
   .animate-fade-up {
     animation: none !important;
   }
-  .delphy-cta {
+  .home-cta {
     transition: none;
   }
 }

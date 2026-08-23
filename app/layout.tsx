@@ -1,22 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Instrument_Serif } from 'next/font/google';
 import './globals.css';
-
-// Body text. Variable weight, so every UI weight comes from one file.
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-sans',
-});
-
-// Display face — used only for the Delphy wordmark. Instrument Serif has the
-// high-contrast, slightly literary feel the devil's-advocate framing wants.
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-  variable: '--font-serif',
-});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -57,10 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`h-full ${inter.variable} ${instrumentSerif.variable}`}
-    >
+    <html lang="en" className="h-full">
       <body className="h-full min-h-screen antialiased">{children}</body>
     </html>
   );
