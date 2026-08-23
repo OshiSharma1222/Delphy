@@ -179,8 +179,20 @@ export default function ConversationComponent({
   // synchronously before the timeout, so only the real second mount's timer fires.
   // Do NOT pass `isEnabled`, that ties track lifetime to mute state and breaks the Web Audio
   // graph inside MicButtonWithVisualizer. Mute uses track.setEnabled() only.
-  const { localMicrophoneTrack, error: micError } =
-    useLocalMicrophoneTrack(isReady);
+  const { localMicrophoneTrack, error: micError } = useLocalMicrophoneTrack(
+    isReady,
+    {
+      // The track was previously created with no audio processing at all,
+      // which the SDK reported as SEND_AUDIO_BITRATE_TOO_LOW: barely any
+      // signal reaching the channel, so speech recognition saw fragments.
+      // AGC is the important one for a quiet or Hands-Free Bluetooth mic.
+      AEC: true, // stops Delphy's own voice being transcribed back as user speech
+      ANS: true, // suppresses background noise before recognition
+      AGC: true, // lifts a quiet input to a usable level
+      // Tuned for voice rather than music, which is what recognition wants.
+      encoderConfig: 'speech_standard',
+    },
+  );
 
   // A denied permission or missing input device otherwise fails silently:
   // the agent simply never hears anything and the UI looks healthy.
