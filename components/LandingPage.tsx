@@ -15,6 +15,7 @@ import {
   resolveMode,
   type DelphyModeId,
 } from '@/lib/delphy/modes';
+import { describeStartFailure, readApiError } from '@/lib/delphy/startFailure';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { HomePage } from './HomePage';
@@ -74,7 +75,9 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [agoraData, setAgoraData] = useState<AgoraTokenData | null>(null);
   const [rtmClient, setRtmClient] = useState<RTMClient | null>(null);
-  const [agentJoinError, setAgentJoinError] = useState(false);
+  // Holds the agent's own failure reason rather than a bare flag, so the
+  // in-call warning can say what went wrong instead of that something did.
+  const [agentJoinError, setAgentJoinError] = useState<string | null>(null);
 
   // Preload heavy modules on mount so they're already cached when the user
   // clicks "Try it Now", eliminates the ~1.8s dynamic-import delay.
@@ -117,7 +120,7 @@ export default function LandingPage() {
   const handleStartConversation = async () => {
     setIsLoading(true);
     setError(null);
-    setAgentJoinError(false);
+    setAgentJoinError(null);
 
     try {
       // 0. Ask for the microphone before anything else. The RTC track is
@@ -137,17 +140,20 @@ export default function LandingPage() {
         return;
       }
 
-      // 1. Fetch RTC token + channel
-      // console.log('Fetching Agora token...');
+      // 1. Fetch RTC token + channel. This is where a deployment with no
+      //    credentials fails, so its error is reported verbatim rather than
+      //    collapsed into the generic retry message.
       const agoraResponse = await fetch('/api/generate-agora-token');
-      const responseData = await agoraResponse.json();
-      // console.log('Agora token response: uid =', responseData.uid, 'channel =', responseData.channel);
 
       if (!agoraResponse.ok) {
-        throw new Error(
-          `Failed to generate Agora token: ${JSON.stringify(responseData)}`,
-        );
+        const detail = await readApiError(agoraResponse);
+        console.error('Failed to generate Agora token:', detail);
+        setError(describeStartFailure(detail));
+        setIsLoading(false);
+        return;
       }
+
+      const responseData = await agoraResponse.json();
 
       // 2. Run agent invite and RTM setup in parallel, both only need the token response.
       //    RTM must be ready before ConversationComponent mounts so AgoraVoiceAI
@@ -165,14 +171,18 @@ export default function LandingPage() {
         })
           .then(async (res) => {
             if (!res.ok) {
-              setAgentJoinError(true);
+              const detail = await readApiError(res);
+              console.error('Failed to start the agent:', detail);
+              setAgentJoinError(detail);
               return null;
             }
             return res.json() as Promise<AgentResponse>;
           })
           .catch((err) => {
             console.error('Failed to start conversation with agent:', err);
-            setAgentJoinError(true);
+            setAgentJoinError(
+              err instanceof Error ? err.message : 'The agent could not be started.',
+            );
             return null;
           }),
 
@@ -295,9 +305,14 @@ export default function LandingPage() {
             <>
               {/* Non-fatal invite warning: the browser session can still render even if agent start failed. */}
               {agentJoinError && (
-                <div className="mx-auto mt-3 max-w-sm rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  Failed to connect with AI agent. The conversation may not work
-                  as expected.
+                <div
+                  role="alert"
+                  className="mx-auto mt-3 max-w-md rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+                >
+                  <p className="font-medium">Delphy could not be started</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {describeStartFailure(agentJoinError)}
+                  </p>
                 </div>
               )}
               {/* Browser-only conversation mount: RTC provider, error boundary, and lazy-loaded call UI. */}
