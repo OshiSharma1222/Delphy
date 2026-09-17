@@ -269,6 +269,37 @@ body {
   --viz-stop-3: 220 14% 22%;
 }
 
+/* --- Accessibility -------------------------------------------------------- */
+
+/* Off-canvas until focused. The nav puts three links and a button ahead of the
+   page content, which is three tab stops per visit for a keyboard user. */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  z-index: 50;
+  transform: translateY(-120%);
+  border-radius: 0 0 0.5rem 0.5rem;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.55rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: transform 140ms ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Anchors get the same ring the Button variants already carry. Without this the
+   nav links and the footer link were reachable and invisible while focused. */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
 /* --- Homepage ------------------------------------------------------------ */
 
 /* Section rhythm: one variable so every band breathes identically. */
@@ -392,7 +423,14 @@ body {
   }
   .home-cta,
   .mode-card-body,
-  .mode-card-icon {
+  .mode-card-icon,
+  .skip-link,
+  .transcript-action {
     transition: none;
+  }
+  /* The connection dot pings forever while a call is live. It is decorative,
+     the colour underneath already carries the state. */
+  .animate-ping {
+    animation: none !important;
   }
 }

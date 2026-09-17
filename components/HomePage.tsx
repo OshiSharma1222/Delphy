@@ -35,6 +35,10 @@ export function HomePage({
 }: HomePageProps) {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
+
       <HomeNav
         mode={mode}
         onModeChange={onModeChange}
@@ -42,7 +46,7 @@ export function HomePage({
         onStartConversation={onStartConversation}
       />
 
-      <main>
+      <main id="main">
         <HomeHero
           mode={mode}
           onModeChange={onModeChange}
