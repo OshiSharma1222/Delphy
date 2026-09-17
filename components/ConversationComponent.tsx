@@ -31,7 +31,7 @@ import {
   normalizeTimestampMs,
   normalizeTranscript,
 } from '@/lib/conversation';
-import { Volume2 } from 'lucide-react';
+import { MicOff, Volume2 } from 'lucide-react';
 import { MicrophoneSelector } from './MicrophoneSelector';
 import { SpeakerSelector } from './SpeakerSelector';
 import type { IRemoteAudioTrack } from 'agora-rtc-react';
@@ -90,6 +90,19 @@ function isRtmSalStatusPayload(value: unknown): value is RtmSalStatusPayload {
     !!value &&
     typeof value === 'object' &&
     (value as { object?: unknown }).object === 'message.sal_status'
+  );
+}
+
+// M must not fire while the listener is inside a control that wants the key,
+// which in this view is the volume slider and any open device menu.
+function isTypingTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element || typeof element.tagName !== 'string') return false;
+  if (element.isContentEditable) return true;
+  return (
+    element.tagName === 'INPUT' ||
+    element.tagName === 'TEXTAREA' ||
+    element.tagName === 'SELECT'
   );
 }
 
@@ -528,6 +541,21 @@ export default function ConversationComponent({
     }
   }, [isEnabled, localMicrophoneTrack]);
 
+  // Muting is the one control reached for mid-sentence, and hunting for a
+  // button with the cursor while talking is exactly when it is hardest.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'm' && event.key !== 'M') return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTypingTarget(event.target)) return;
+      event.preventDefault();
+      void handleMicToggle();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleMicToggle]);
+
   const handleTokenWillExpire = useCallback(async () => {
     if (!onTokenWillExpire || !joinedUID) return;
     try {
@@ -583,49 +611,72 @@ export default function ConversationComponent({
         </div>
       }
       controls={
-        <div
-          className="mx-auto flex w-fit items-center gap-3 rounded-full border border-border bg-card/80 px-4 py-2 backdrop-blur-md"
-          role="group"
-          aria-label="Audio controls"
-        >
+        <div className="flex flex-col items-center gap-3">
           {micError && (
             <p
               role="alert"
-              className="max-w-xs text-xs leading-5 text-destructive"
+              className="max-w-sm text-center text-xs leading-5 text-destructive"
             >
               Microphone unavailable, Delphy cannot hear you. Check the
               site&apos;s microphone permission, then reload.
             </p>
           )}
-          <div className="conversation-mic-host flex items-center justify-center">
-            <MicButtonWithVisualizer
-              isEnabled={isEnabled}
-              setIsEnabled={setIsEnabled}
-              track={localMicrophoneTrack}
-              onToggle={handleMicToggle}
-              className="overflow-visible"
-              aria-label={isEnabled ? 'Mute microphone' : 'Unmute microphone'}
-              enabledColor="hsl(var(--primary))"
-              disabledColor="hsl(var(--destructive))"
-            />
+
+          {/* Muting used to be legible only as a colour change on the button.
+              People kept answering a question into a muted mic and waiting. */}
+          {!isEnabled && !micError && (
+            <p className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3.5 py-1.5 text-xs font-medium text-destructive">
+              <MicOff aria-hidden className="h-3.5 w-3.5 shrink-0" />
+              Muted, Delphy cannot hear you
+            </p>
+          )}
+
+          <div
+            className="flex w-fit items-center gap-3 rounded-full border border-border bg-card/80 px-4 py-2 backdrop-blur-md"
+            role="group"
+            aria-label="Audio controls"
+          >
+            <div className="conversation-mic-host flex items-center justify-center">
+              <MicButtonWithVisualizer
+                isEnabled={isEnabled}
+                setIsEnabled={setIsEnabled}
+                track={localMicrophoneTrack}
+                onToggle={handleMicToggle}
+                className="overflow-visible"
+                aria-label={isEnabled ? 'Mute microphone' : 'Unmute microphone'}
+                enabledColor="hsl(var(--primary))"
+                disabledColor="hsl(var(--destructive))"
+              />
+            </div>
+            <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
+
+            <SpeakerSelector audioTracks={remoteAudioTracks} />
+
+            <label className="flex items-center gap-2 pl-1 pr-1">
+              <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input
+                type="range"
+                min={50}
+                max={400}
+                step={10}
+                value={agentVolume}
+                onChange={(event) => setAgentVolume(Number(event.target.value))}
+                className="h-1 w-24 cursor-pointer accent-primary"
+                aria-label="Agent playback volume"
+              />
+            </label>
           </div>
-          <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
 
-          <SpeakerSelector audioTracks={remoteAudioTracks} />
+          <p className="text-[11px] text-muted-foreground">
+            Press <kbd className="conversation-kbd">M</kbd> to
+            {isEnabled ? ' mute' : ' unmute'}
+          </p>
 
-          <label className="flex items-center gap-2 pl-1 pr-1">
-            <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <input
-              type="range"
-              min={50}
-              max={400}
-              step={10}
-              value={agentVolume}
-              onChange={(event) => setAgentVolume(Number(event.target.value))}
-              className="h-1 w-24 cursor-pointer accent-primary"
-              aria-label="Agent playback volume"
-            />
-          </label>
+          {/* Announces the change for screen readers; the banner above is
+              visual only and the mic button conveys state through colour. */}
+          <span aria-live="polite" className="sr-only">
+            {isEnabled ? 'Microphone live' : 'Microphone muted'}
+          </span>
         </div>
       }
       onEndConversation={handleEndConversation}

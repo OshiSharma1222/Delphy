@@ -337,6 +337,22 @@ body {
   color: hsl(var(--primary-foreground));
 }
 
+/* Keycap for the in-call shortcut hint. */
+.conversation-kbd {
+  display: inline-block;
+  min-width: 1.35rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid hsl(var(--border));
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.65rem;
+  line-height: 1.1rem;
+  text-align: center;
+}
+
 /* In-call badge naming the live persona. */
 .mode-badge {
   border-color: hsl(var(--primary) / 0.35);
