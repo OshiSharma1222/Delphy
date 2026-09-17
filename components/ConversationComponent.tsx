@@ -619,7 +619,7 @@ export default function ConversationComponent({
       }
       visualizer={
         <div
-          className="relative flex h-full min-h-[20rem] w-full max-w-4xl items-center justify-center"
+          className="relative flex h-full min-h-[11rem] w-full max-w-4xl items-center justify-center sm:min-h-[15rem] lg:min-h-[20rem]"
           role="region"
           aria-label="AI agent status visualization"
         >
@@ -685,8 +685,10 @@ export default function ConversationComponent({
             </p>
           )}
 
+          {/* Wraps rather than overflows. At 320px the dock is wider than the
+              screen, and the volume slider is the piece that can give. */}
           <div
-            className="flex w-fit items-center gap-3 rounded-full border border-border bg-card/80 px-4 py-2 backdrop-blur-md"
+            className="flex w-fit max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-3xl border border-border bg-card/80 px-3 py-2 backdrop-blur-md sm:rounded-full sm:px-4"
             role="group"
             aria-label="Audio controls"
           >
@@ -715,7 +717,7 @@ export default function ConversationComponent({
                 step={10}
                 value={agentVolume}
                 onChange={(event) => setAgentVolume(Number(event.target.value))}
-                className="h-1 w-24 cursor-pointer accent-primary"
+                className="h-1 w-16 cursor-pointer accent-primary sm:w-24"
                 aria-label="Agent playback volume"
               />
             </label>

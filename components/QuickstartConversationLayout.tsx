@@ -68,7 +68,10 @@ export function QuickstartConversationLayout({
       </header>
 
       <div className="flex min-h-0 w-full flex-1 flex-col gap-4 px-4 pb-4 pt-4 md:px-6 lg:flex-row lg:gap-0">
-        <aside className="order-2 h-64 min-h-0 w-full shrink-0 lg:order-1 lg:h-full lg:w-[26rem]">
+        {/* Fixed heights on a viewport-pinned column are a budget, not a
+            preference: header plus rail plus stage has to fit inside 100dvh on
+            a short phone, and the parent clips anything that does not. */}
+        <aside className="order-2 h-44 min-h-0 w-full shrink-0 sm:h-56 lg:order-1 lg:h-full lg:w-[26rem]">
           {transcriptPanel}
         </aside>
 
