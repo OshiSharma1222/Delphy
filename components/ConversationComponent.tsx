@@ -32,6 +32,7 @@ import {
   normalizeTranscript,
 } from '@/lib/conversation';
 import { MicOff, Volume2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MicrophoneSelector } from './MicrophoneSelector';
 import { SpeakerSelector } from './SpeakerSelector';
 import type { IRemoteAudioTrack } from 'agora-rtc-react';
@@ -50,6 +51,11 @@ import type { ConversationComponentProps } from '@/types/conversation';
 
 // Cap the displayed issues list to avoid overwhelming the UI during a cascade of errors.
 const MAX_CONNECTION_ISSUES = 6;
+
+// How long the agent may take to appear in the channel before the wait stops
+// reading as normal startup. start() returning only means the invite was
+// accepted, so a short wait here is expected and a long one is not.
+const AGENT_JOIN_GRACE_MS = 12_000;
 
 type AgoraRtcWithParameters = typeof AgoraRTC & {
   setParameter?: (key: string, value: unknown) => void;
@@ -541,6 +547,20 @@ export default function ConversationComponent({
     }
   }, [isEnabled, localMicrophoneTrack]);
 
+  // The agent joins asynchronously, so `joined but nobody here` is a normal
+  // state for a second or two and a broken one after twelve. Nothing used to
+  // distinguish them: the visualizer sat in `not-joined` either way and the
+  // listener had no way to tell startup from failure.
+  const [agentJoinTimedOut, setAgentJoinTimedOut] = useState(false);
+  useEffect(() => {
+    if (!joinSuccess || isAgentConnected) {
+      setAgentJoinTimedOut(false);
+      return;
+    }
+    const id = setTimeout(() => setAgentJoinTimedOut(true), AGENT_JOIN_GRACE_MS);
+    return () => clearTimeout(id);
+  }, [joinSuccess, isAgentConnected]);
+
   // Muting is the one control reached for mid-sentence, and hunting for a
   // button with the cursor while talking is exactly when it is hardest.
   useEffect(() => {
@@ -604,6 +624,39 @@ export default function ConversationComponent({
           aria-label="AI agent status visualization"
         >
           <AgentVisualizer state={visualizerState} size="lg" />
+
+          {/* Says out loud what the visualizer can only imply. */}
+          {joinSuccess && !isAgentConnected && (
+            <div className="absolute inset-x-0 bottom-0 flex justify-center px-4">
+              {agentJoinTimedOut ? (
+                <div
+                  role="alert"
+                  className="max-w-sm rounded-2xl border border-destructive/40 bg-destructive/10 px-5 py-4 text-center"
+                >
+                  <p className="text-sm font-medium text-destructive">
+                    Delphy has not joined the room
+                  </p>
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                    You are connected, but the agent never arrived. Starting a
+                    fresh session usually clears it.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleEndConversation}
+                    className="mt-3 h-8 rounded-full border border-border px-4 text-xs font-medium"
+                  >
+                    Start over
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground" aria-live="polite">
+                  Waiting for Delphy to join...
+                </p>
+              )}
+            </div>
+          )}
+
           {remoteUsers.map((user) => (
             <div key={user.uid} className="hidden">
               <RemoteUser user={user} />
