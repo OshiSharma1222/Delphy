@@ -285,6 +285,40 @@ produces pauses that ragebait's timings would talk straight over.
 
 ---
 
+## The call view
+
+```
++--------------------------------------------------------------+
+| Delphy  [Critical thinking]        3:41   * [End Conversation]|
+| Pipeline  Deepgram STT / OpenAI LLM / MiniMax TTS             |
++---------------------------+----------------------------------+
+| Transcript      [copy][dl]|                                   |
+|                           |          AgentVisualizer          |
+|  DELPHY 14:02             |                                   |
+|  Why do you think that?   |   "Waiting for Delphy to join"    |
+|                           |                                   |
+|              YOU 14:02    |   ( mic ) [in] [out] [volume]     |
+|   Because output went up  |        Press M to mute            |
++---------------------------+----------------------------------+
+```
+
+Things worth knowing about it:
+
+- The header names the persona that actually started, taken from the invite
+  response rather than from the request.
+- `SessionTimer` owns its own state so the one-second tick re-renders one span
+  instead of the visualizer, the transcript and the dock.
+- The transcript exports as plain text. Ending the call is the only exit and it
+  discards every turn, which is a poor outcome for an app whose entire output is
+  what you said under questioning.
+- `M` toggles the microphone unless focus is in an input or a modifier is held.
+  A muted microphone gets a banner, not just a colour change on the button.
+- The agent joins asynchronously, so the view distinguishes a normal wait from a
+  failed one with a twelve second grace period rather than sitting in
+  `not-joined` indefinitely.
+
+---
+
 ## Not yet wired
 
 `roundState.ts`, `prompts.ts`, `sessionStore.ts`, and `guardRail.ts` hold the
@@ -330,25 +364,41 @@ intended flow is one stricter retry, then a canned in-character fallback.
 
 ```
 app/
-  layout.tsx                    root layout and metadata
-  globals.css                   design tokens and Delphy light palette
+  layout.tsx                    root layout, metadata, social cards
+  globals.css                   design tokens, mode accents, component styles
+  opengraph-image.tsx           social card, generated at build from MODE_LIST
   api/
     generate-agora-token/       RTC+RTM token minting
-    invite-agent/               agent config and session start
+    invite-agent/               per-mode agent config and session start
     stop-conversation/          idempotent agent teardown
     chat/completions/           custom-LLM endpoint (not wired)
 components/
   LandingPage.tsx               session bootstrap, mode state, view switch
   HomePage.tsx                  pre-call homepage composition
-  home/                         nav, hero, mode switch, how-it-works, sample, rounds, footer
+  home/
+    HomeNav.tsx                 sticky nav with a compact mode switch
+    HomeHero.tsx                mode-aware headline, selector, CTA
+    HomeModeSwitch.tsx          the two mode cards
+    HomeHowItWorks.tsx          three steps, per mode
+    HomeStarters.tsx            openers, so nobody freezes at the microphone
+    HomeAnatomy.tsx             SVG of what each mode does to a claim
+    HomeSampleExchange.tsx      illustrative transcript, per mode
+    HomeRounds.tsx              the rail, per mode
+    HomeFooter.tsx              attribution
   ConversationComponent.tsx     in-call join, publish, transcripts, teardown
+  QuickstartConversationLayout  in-call shell: header, rail, stage, dock
+  QuickstartTranscriptPanel     live turns, copy and download
+  SessionTimer.tsx              elapsed time, self-contained tick
+  LoadingSkeleton.tsx           stands in for the call view while it loads
   ConnectionStatusPanel.tsx     connection state and captured issues
   MicrophoneSelector.tsx        input-device switching
 lib/
   agora.ts                      DEFAULT_AGENT_UID
   conversation.ts               transcript normalisation, state mapping
+  conversation.test.ts          spacing, timestamps, visualizer precedence
   delphy/modes.ts               mode ids and homepage copy (client-safe)
   delphy/personas.ts            per-mode prompt, greeting, VAD tuning (server)
+  delphy/*.test.ts              guardrail, round machine, mode invariants
   delphy/                       round logic and guardrail (not wired)
 types/
   conversation.ts               shared API and prop types
@@ -380,9 +430,16 @@ server-only — only `NEXT_PUBLIC_AGORA_APP_ID` reaches the browser.
 ```bash
 pnpm typecheck    # tsc --noEmit
 pnpm lint         # eslint
+pnpm test         # node:test over lib/**/*.test.ts
 pnpm build        # next build
-pnpm verify       # doctor, lint, typecheck, api contracts, build
+pnpm verify       # doctor, lint, typecheck, test, api contracts, build
 ```
+
+`pnpm test` covers the pure logic: the guardrail's rejection of statements
+wearing a question mark, the round machine's thresholds and immutability, the
+mode copy invariants the UI depends on, and the visualizer precedence rule that
+keeps "listening" off screen during a reconnect. It needs no `.env`, unlike
+`pnpm verify`, which runs `doctor` first.
 
 If those abort before running with `ERR_PNPM_IGNORED_BUILDS`, run
 `pnpm approve-builds` once to let `esbuild`, `sharp`, and `unrs-resolver` run
