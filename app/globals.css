@@ -337,6 +337,32 @@ body {
   color: hsl(var(--primary-foreground));
 }
 
+/* Transcript header actions: quiet until wanted, disabled when empty. */
+.transcript-action {
+  display: inline-flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+.transcript-action:hover:not(:disabled) {
+  background-color: hsl(var(--foreground) / 0.05);
+  color: hsl(var(--foreground));
+}
+.transcript-action:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.transcript-action:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 /* Keycap for the in-call shortcut hint. */
 .conversation-kbd {
   display: inline-block;

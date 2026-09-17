@@ -594,6 +594,7 @@ export default function ConversationComponent({
           messageList={messageList}
           currentInProgressMessage={currentInProgressMessage}
           agentUID={agentUID}
+          mode={mode}
         />
       }
       visualizer={
