@@ -4,6 +4,7 @@ import type { DelphyModeId } from '@/lib/delphy/modes';
 import { HomeNav } from './home/HomeNav';
 import { HomeHero } from './home/HomeHero';
 import { HomeHowItWorks } from './home/HomeHowItWorks';
+import { HomeAnatomy } from './home/HomeAnatomy';
 import { HomeSampleExchange } from './home/HomeSampleExchange';
 import { HomeRounds } from './home/HomeRounds';
 import { HomeFooter } from './home/HomeFooter';
@@ -54,6 +55,8 @@ export function HomePage({
         </div>
 
         <HomeHowItWorks mode={mode} />
+
+        <HomeAnatomy mode={mode} />
 
         <HomeSampleExchange mode={mode} />
 
