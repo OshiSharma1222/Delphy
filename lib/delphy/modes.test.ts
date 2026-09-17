@@ -61,27 +61,81 @@ describe('mode copy', () => {
       assert.ok(copy.steps.length > 0, `${copy.id} has no steps`);
       assert.ok(copy.rounds.length > 0, `${copy.id} has no rounds`);
       assert.ok(copy.starters.length > 0, `${copy.id} has no starters`);
-      assert.ok(copy.sample.length > 0, `${copy.id} has no sample exchange`);
     }
   });
+});
 
-  it('opens every sample exchange with Delphy', () => {
-    // The greeting is spoken first in a real call, so a sample that opens on
-    // the user would be teaching the wrong shape.
+describe('the playable demo', () => {
+  it('only ever has Delphy asking questions', () => {
+    // A demo that breaks the one rule teaches the wrong thing on the homepage.
     for (const copy of MODE_LIST) {
-      assert.equal(copy.sample[0].speaker, 'delphy', `${copy.id} sample`);
-    }
-  });
-
-  it('only ever has Delphy asking questions in the samples', () => {
-    for (const copy of MODE_LIST) {
-      for (const turn of copy.sample) {
-        if (turn.speaker !== 'delphy') continue;
+      for (const [id, node] of Object.entries(copy.demo.nodes)) {
         assert.ok(
-          turn.line.trim().endsWith('?'),
-          `${copy.id} sample breaks the one rule: ${turn.line}`,
+          node.question.trim().endsWith('?'),
+          `${copy.id}.${id} is not a question: ${node.question}`,
         );
       }
+    }
+  });
+
+  it('has a root that exists and every choice pointing somewhere real', () => {
+    // A dangling `next` would crash the component on click, and the tree is
+    // hand-written data with no type-level guarantee that ids line up.
+    for (const copy of MODE_LIST) {
+      const { nodes, rootId } = copy.demo;
+      assert.ok(nodes[rootId], `${copy.id} root ${rootId} is missing`);
+      for (const [id, node] of Object.entries(nodes)) {
+        for (const choice of node.choices ?? []) {
+          assert.ok(
+            nodes[choice.next],
+            `${copy.id}.${id} points at missing node ${choice.next}`,
+          );
+        }
+      }
+    }
+  });
+
+  it('can reach every node from the root, and every path terminates', () => {
+    for (const copy of MODE_LIST) {
+      const { nodes, rootId } = copy.demo;
+      const seen = new Set<string>();
+      const queue = [rootId];
+      let terminals = 0;
+
+      while (queue.length > 0) {
+        const id = queue.shift() as string;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const node = nodes[id];
+        if (!node.choices || node.choices.length === 0) {
+          terminals += 1;
+          continue;
+        }
+        queue.push(...node.choices.map((choice) => choice.next));
+      }
+
+      assert.equal(
+        seen.size,
+        Object.keys(nodes).length,
+        `${copy.id} has nodes unreachable from the root`,
+      );
+      assert.ok(terminals > 0, `${copy.id} never ends`);
+    }
+  });
+
+  it('offers exactly two replies wherever it offers any', () => {
+    // The layout is built for a pair; three would overflow the panel.
+    for (const copy of MODE_LIST) {
+      for (const [id, node] of Object.entries(copy.demo.nodes)) {
+        if (!node.choices) continue;
+        assert.equal(node.choices.length, 2, `${copy.id}.${id}`);
+      }
+    }
+  });
+
+  it('states the position being defended', () => {
+    for (const copy of MODE_LIST) {
+      assert.ok(copy.demo.topic.trim().length > 0, `${copy.id} has no topic`);
     }
   });
 });

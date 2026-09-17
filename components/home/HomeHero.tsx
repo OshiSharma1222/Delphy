@@ -24,30 +24,40 @@ export function HomeHero({
   const copy = MODE_COPY[mode];
 
   return (
-    <section className="home-section mx-auto w-full max-w-5xl px-6 text-center">
-      <p className="animate-fade-up text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
-        Think out loud &middot; voice
+    <section className="home-section relative mx-auto w-full max-w-5xl px-6 text-center">
+      {/* Two slow washes of the accent behind the hero. Decorative, and it
+          recolours with the mode like everything else. */}
+      <div aria-hidden className="aurora" />
+      <div aria-hidden className="dot-grid" />
+
+      <p className="animate-fade-up relative z-[1] flex justify-center">
+        <span className="hero-badge">
+          <span aria-hidden className="hero-badge-dot" />
+          <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary">
+            Think out loud &middot; voice
+          </span>
+        </span>
       </p>
 
       {/* Keyed on mode so the swap replays the entry animation instead of
           silently swapping words under the reader. */}
       <h1
         key={`${mode}-heading`}
-        className="animate-fade-up animate-fade-up-d1 mx-auto mt-7 max-w-3xl text-balance font-serif text-[2.75rem] font-normal leading-[1.06] tracking-[-0.02em] text-foreground sm:text-6xl md:text-7xl"
+        className="hero-heading animate-fade-up animate-fade-up-d1 relative z-[1] mx-auto mt-7 max-w-3xl text-balance font-serif text-[2.75rem] font-normal leading-[1.06] tracking-[-0.02em] sm:text-6xl md:text-7xl"
       >
         {copy.heroHeading}
       </h1>
 
       <p
         key={`${mode}-body`}
-        className="animate-fade-up animate-fade-up-d2 mx-auto mt-7 max-w-xl text-balance text-[16px] leading-8 text-muted-foreground"
+        className="animate-fade-up animate-fade-up-d2 relative z-[1] mx-auto mt-7 max-w-xl text-balance text-[16px] leading-8 text-muted-foreground"
       >
         {copy.heroBody}
       </p>
 
       {/* The mode choice sits above the CTA because it changes what the CTA
           starts, and the button label moves with it. */}
-      <div className="animate-fade-up animate-fade-up-d3 mx-auto mt-12 w-full max-w-2xl">
+      <div className="animate-fade-up animate-fade-up-d3 relative z-[1] mx-auto mt-12 w-full max-w-2xl">
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Pick how it questions you
         </p>
@@ -58,7 +68,7 @@ export function HomeHero({
         />
       </div>
 
-      <div className="animate-fade-up animate-fade-up-d3 mt-9 flex flex-col items-center">
+      <div className="animate-fade-up animate-fade-up-d3 relative z-[1] mt-9 flex flex-col items-center">
         <Button
           onClick={onStartConversation}
           disabled={isLoading}
@@ -93,7 +103,7 @@ export function HomeHero({
 
       {/* The face-off closes the hero. Background was cut to transparency so the
           figures sit on the canvas directly rather than in a white box. */}
-      <div className="animate-fade-up animate-fade-up-d3 mt-16 flex justify-center">
+      <div className="animate-fade-up animate-fade-up-d3 relative z-[1] mt-16 flex justify-center">
         <Image
           src="/delphy-face-off.webp"
           alt="A man and a robot facing each other at eye level"

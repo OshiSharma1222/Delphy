@@ -20,7 +20,7 @@ export function HomeStarters({ mode }: HomeStartersProps) {
       id="starters"
       className="home-section mx-auto w-full max-w-5xl px-6"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div data-reveal className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Something to bring
         </h2>
@@ -34,10 +34,14 @@ export function HomeStarters({ mode }: HomeStartersProps) {
       </p>
 
       <ul className="mt-10 grid gap-3 sm:grid-cols-2">
-        {copy.starters.map((starter) => (
+        {copy.starters.map((starter, index) => (
           <li
             key={`${mode}-${starter}`}
-            className="flex gap-3 rounded-2xl border border-border bg-card px-6 py-5"
+            data-reveal
+            style={
+              { '--reveal-delay': `${index * 70}ms` } as React.CSSProperties
+            }
+            className="lift flex gap-3 rounded-2xl border border-border bg-card px-6 py-5"
           >
             <span
               aria-hidden

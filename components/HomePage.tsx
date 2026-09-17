@@ -1,12 +1,13 @@
 'use client';
 
 import type { DelphyModeId } from '@/lib/delphy/modes';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { HomeNav } from './home/HomeNav';
 import { HomeHero } from './home/HomeHero';
 import { HomeHowItWorks } from './home/HomeHowItWorks';
 import { HomeAnatomy } from './home/HomeAnatomy';
 import { HomeStarters } from './home/HomeStarters';
-import { HomeSampleExchange } from './home/HomeSampleExchange';
+import { HomeTryIt } from './home/HomeTryIt';
 import { HomeRounds } from './home/HomeRounds';
 import { HomeFooter } from './home/HomeFooter';
 
@@ -33,11 +34,18 @@ export function HomePage({
   error,
   onStartConversation,
 }: HomePageProps) {
+  // Re-run on a mode change: switching swaps in fresh DOM nodes, which start
+  // hidden, so they need a new observer or they would never appear.
+  useScrollReveal([mode]);
+
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="relative min-h-dvh bg-background text-foreground">
       <a href="#main" className="skip-link">
         Skip to content
       </a>
+
+      {/* Decorative, behind everything, inert to the cursor. */}
+      <div aria-hidden className="grain" />
 
       <HomeNav
         mode={mode}
@@ -46,7 +54,7 @@ export function HomePage({
         onStartConversation={onStartConversation}
       />
 
-      <main id="main">
+      <main id="main" className="relative z-[2]">
         <HomeHero
           mode={mode}
           onModeChange={onModeChange}
@@ -59,13 +67,13 @@ export function HomePage({
           <div className="home-divider" />
         </div>
 
+        <HomeTryIt mode={mode} onStartConversation={onStartConversation} />
+
         <HomeHowItWorks mode={mode} />
 
         <HomeStarters mode={mode} />
 
         <HomeAnatomy mode={mode} />
-
-        <HomeSampleExchange mode={mode} />
 
         <HomeRounds mode={mode} />
       </main>

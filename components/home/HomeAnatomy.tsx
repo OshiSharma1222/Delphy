@@ -280,7 +280,7 @@ export function HomeAnatomy({ mode }: HomeAnatomyProps) {
   return (
     <section id="anatomy" className="home-section">
       <div className="mx-auto w-full max-w-4xl px-6">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div data-reveal className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
             Where the question lands
           </h2>
@@ -289,7 +289,11 @@ export function HomeAnatomy({ mode }: HomeAnatomyProps) {
           </span>
         </div>
 
-        <div className="mt-12 rounded-2xl border border-border bg-card p-6 sm:p-10">
+        <div
+          data-reveal
+          style={{ '--reveal-delay': '90ms' } as React.CSSProperties}
+          className="mt-12 rounded-2xl border border-border bg-card p-6 sm:p-10"
+        >
           {mode === 'critical' ? <CriticalDiagram /> : <RagebaitDiagram />}
         </div>
 

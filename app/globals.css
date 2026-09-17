@@ -269,6 +269,172 @@ body {
   --viz-stop-3: 220 14% 22%;
 }
 
+/* --- Atmosphere ----------------------------------------------------------
+   The palette is paper and ink on purpose, which reads as calm and, without
+   help, as flat. These add depth rather than colour: two slow drifting washes
+   of the accent behind the hero, and a fine grain over the whole canvas so the
+   background has a surface instead of being a void. Both are decorative, both
+   sit behind everything, and both stop dead under reduced motion. ---------- */
+
+.aurora {
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 120%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.aurora::before,
+.aurora::after {
+  content: '';
+  position: absolute;
+  width: 48rem;
+  height: 48rem;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+.aurora::before {
+  top: -16rem;
+  left: -14rem;
+  background: radial-gradient(
+    circle at center,
+    hsl(var(--primary) / 0.5),
+    hsl(var(--primary) / 0.14) 45%,
+    transparent 68%
+  );
+  animation: drift-a 26s ease-in-out infinite alternate;
+}
+.aurora::after {
+  top: -10rem;
+  right: -16rem;
+  background: radial-gradient(
+    circle at center,
+    hsl(var(--primary) / 0.34),
+    hsl(var(--primary) / 0.1) 45%,
+    transparent 68%
+  );
+  animation: drift-b 32s ease-in-out infinite alternate;
+}
+
+/* A faint dot grid under the hero, so the canvas has structure as well as
+   colour. Masked to fade out before it reaches the content below. */
+.dot-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    hsl(var(--foreground) / 0.13) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+  /* Fades out well above the body copy: dots behind running text read as
+     dirt on the screen rather than as texture. */
+  mask-image: radial-gradient(ellipse 58% 34% at 50% 14%, #000 10%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse 58% 34% at 50% 14%, #000 10%, transparent 72%);
+}
+
+/* Ink that warms into the accent across the line. Both ends stay dark enough
+   to read on paper, so this adds colour without costing contrast. */
+.hero-heading {
+  background-image: linear-gradient(
+    104deg,
+    hsl(var(--foreground)) 22%,
+    hsl(var(--primary)) 96%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* The "live" pill above the headline. */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid hsl(var(--primary) / 0.3);
+  background-color: hsl(var(--primary) / 0.07);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+}
+.hero-badge-dot {
+  position: relative;
+  display: inline-flex;
+  height: 0.4rem;
+  width: 0.4rem;
+}
+.hero-badge-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background-color: hsl(var(--primary));
+  animation: badge-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.hero-badge-dot::after {
+  content: '';
+  position: relative;
+  height: 0.4rem;
+  width: 0.4rem;
+  border-radius: 999px;
+  background-color: hsl(var(--primary));
+}
+@keyframes badge-ping {
+  75%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6rem, 3rem, 0) scale(1.12); }
+}
+@keyframes drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.08); }
+  to   { transform: translate3d(-5rem, 4rem, 0) scale(1); }
+}
+
+/* Fine grain. An inline feTurbulence, so it costs no request. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* --- Scroll reveal --------------------------------------------------------
+   Everything below the fold arrives as the reader gets to it. Applied by an
+   IntersectionObserver in HomePage rather than on a timer, so a fast scroll
+   never leaves content stranded invisible. The no-js and reduced-motion cases
+   both resolve to fully visible. ------------------------------------------ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Cards that respond to the cursor. */
+.lift {
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms ease;
+}
+.lift:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow: 0 12px 28px -18px hsl(24 10% 12% / 0.5);
+}
+
 /* --- Accessibility -------------------------------------------------------- */
 
 /* Off-canvas until focused. The nav puts three links and a button ahead of the
@@ -368,6 +534,76 @@ button:focus-visible {
   color: hsl(var(--primary-foreground));
 }
 
+/* --- Playable demo -------------------------------------------------------- */
+
+/* The caret that follows the typing. */
+.type-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background-color: hsl(var(--primary));
+  animation: caret-blink 1s steps(1) infinite;
+}
+@keyframes caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* A reply you can pick. Reads as a thing you would say, not as a form field. */
+.demo-choice {
+  position: relative;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background-color: hsl(var(--card));
+  padding: 0.7rem 1.1rem 0.7rem 2.1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: hsl(var(--foreground));
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* The quote mark sits in the left gutter so the label stays flush. */
+.demo-choice::before {
+  content: '';
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background-color: hsl(var(--border));
+  transform: translateY(-50%);
+  transition: background-color 160ms ease;
+}
+.demo-choice:hover:not(:disabled) {
+  border-color: hsl(var(--primary) / 0.5);
+  background-color: hsl(var(--primary) / 0.05);
+  transform: translateX(2px);
+}
+.demo-choice:hover:not(:disabled)::before {
+  background-color: hsl(var(--primary));
+}
+.demo-choice:disabled {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .type-caret {
+    animation: none;
+  }
+  .demo-choice {
+    transition: none;
+  }
+  .demo-choice:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* Transcript header actions: quiet until wanted, disabled when empty. */
 .transcript-action {
   display: inline-flex;
@@ -432,5 +668,19 @@ button:focus-visible {
      the colour underneath already carries the state. */
   .animate-ping {
     animation: none !important;
+  }
+  /* Atmosphere holds still, and nothing is allowed to arrive on scroll. */
+  .aurora::before,
+  .aurora::after,
+  .hero-badge-dot::before {
+    animation: none !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .lift:hover {
+    transform: none;
   }
 }

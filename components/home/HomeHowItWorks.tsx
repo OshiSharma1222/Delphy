@@ -12,7 +12,7 @@ export function HomeHowItWorks({ mode }: HomeHowItWorksProps) {
       id="how-it-works"
       className="home-section mx-auto w-full max-w-5xl px-6"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div data-reveal className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           How it works
         </h2>
@@ -22,8 +22,15 @@ export function HomeHowItWorks({ mode }: HomeHowItWorksProps) {
       </div>
 
       <ol className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-3">
-        {copy.steps.map((step) => (
-          <li key={`${mode}-${step.n}`} className="border-t border-border pt-6">
+        {copy.steps.map((step, index) => (
+          <li
+            key={`${mode}-${step.n}`}
+            data-reveal
+            style={
+              { '--reveal-delay': `${index * 90}ms` } as React.CSSProperties
+            }
+            className="border-t border-border pt-6"
+          >
             <span className="font-mono text-[11px] tabular-nums text-primary">
               {step.n}
             </span>

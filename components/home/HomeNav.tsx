@@ -37,10 +37,10 @@ export function HomeNav({
             How it works
           </a>
           <a
-            href="#sample"
+            href="#try"
             className="hidden text-[13px] text-muted-foreground transition-colors hover:text-foreground md:block"
           >
-            Sample
+            Try it
           </a>
 
           {/* Compact mirror of the hero selector, so the mode stays switchable
