@@ -2,17 +2,44 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { DEFAULT_MODE } from '@/lib/delphy/modes';
 
+// Absolute URLs for social cards. Vercel injects VERCEL_URL per deployment, so
+// a preview links to itself rather than to production.
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000');
+
+const DESCRIPTION =
+  'A voice-native sparring partner that will not tell you what it thinks. Bring a position and defend it, in critical thinking mode or ragebait mode. Delphy only ever asks questions.';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#0e0e11',
+  // Matches --background in the Delphy palette. It was near-black, which the
+  // OS painted around a page that is deliberately paper white.
+  themeColor: '#fdfcfa',
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'Delphy',
-  description:
-    'A voice-native sparring partner that will not tell you what it thinks. Bring a position and defend it, in critical thinking mode or ragebait mode. Delphy only ever asks questions.',
+  description: DESCRIPTION,
+  applicationName: 'Delphy',
+  // opengraph-image.tsx supplies the image for both cards automatically.
+  openGraph: {
+    title: 'Delphy',
+    description: DESCRIPTION,
+    siteName: 'Delphy',
+    type: 'website',
+    url: siteUrl,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Delphy',
+    description: DESCRIPTION,
+  },
   icons: {
     icon: [
       { url: '/favicon.ico' },
