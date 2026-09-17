@@ -20,6 +20,12 @@ const config: Config = {
         // Without it, hsl(var(--token)) can't accept an alpha channel at utility-class time.
   			background: 'hsl(var(--background) / <alpha-value>)',
   			foreground: 'hsl(var(--foreground) / <alpha-value>)',
+        // --surface and --surface-elevated are defined in all three palettes
+        // but were never mapped here, so bg-surface silently produced nothing.
+        surface: {
+          DEFAULT: 'hsl(var(--surface) / <alpha-value>)',
+          elevated: 'hsl(var(--surface-elevated) / <alpha-value>)'
+        },
   			card: {
   				DEFAULT: 'hsl(var(--card) / <alpha-value>)',
   				foreground: 'hsl(var(--card-foreground) / <alpha-value>)'

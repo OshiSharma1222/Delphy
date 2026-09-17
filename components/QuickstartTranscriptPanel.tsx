@@ -45,12 +45,12 @@ export function QuickstartTranscriptPanel({
 
   return (
     <section
-      className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border bg-card/20"
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface/60"
       aria-label="Transcription panel"
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Transcript</h2>
+          <h2 className="text-sm font-medium text-foreground">Transcript</h2>
           <p className="text-xs text-muted-foreground">Live voice turns</p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function QuickstartTranscriptPanel({
         ) : (
           messages.map((message, index) => {
             const isAgent = String(message.uid) === agentUID;
-            const label = isAgent ? 'Agent' : 'You';
+            const label = isAgent ? 'Delphy' : 'You';
             const text = message.text?.trim();
             const time = formatMessageTime(message.createdAt);
 
@@ -75,15 +75,23 @@ export function QuickstartTranscriptPanel({
                 key={`${message.turn_id ?? message.uid}-${index}`}
                 className={`flex flex-col ${isAgent ? 'items-start' : 'items-end'}`}
               >
-                <div className="mb-1 flex items-center gap-2 px-1 text-xs font-semibold text-muted-foreground">
+                <div
+                  className={`mb-1.5 flex items-center gap-2 px-1 text-[10px] font-medium uppercase tracking-[0.16em] ${
+                    isAgent ? 'text-primary' : 'text-muted-foreground/70'
+                  }`}
+                >
                   <span>{label}</span>
-                  {time && <span className="font-normal">{time}</span>}
+                  {time && (
+                    <span className="tracking-normal text-muted-foreground/70">
+                      {time}
+                    </span>
+                  )}
                 </div>
                 <div
-                  className={`max-w-full whitespace-pre-wrap rounded-xl border px-3 py-2 text-sm leading-6 ${
+                  className={`max-w-[92%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-6 ${
                     isAgent
-                      ? 'border-[#2f2f2f] bg-[#212121] text-[#e7e7e7]'
-                      : 'border-[#d7d7d7] bg-[#fdfcfb] text-black'
+                      ? 'rounded-tl-sm border border-border bg-card text-foreground'
+                      : 'rounded-tr-sm bg-foreground/[0.055] text-muted-foreground'
                   }`}
                 >
                   {text || '...'}
