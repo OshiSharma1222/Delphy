@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { MODE_COPY, type DelphyModeId } from '@/lib/delphy/modes';
+import { SessionTimer } from './SessionTimer';
 
 type QuickstartConversationLayoutProps = {
   mode: DelphyModeId;
@@ -50,7 +51,8 @@ export function QuickstartConversationLayout({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:pr-1">
+        <div className="flex items-center gap-3 md:pr-1">
+          <SessionTimer />
           {statusPanel}
           <Button
             variant="destructive"
