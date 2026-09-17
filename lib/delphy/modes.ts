@@ -35,6 +35,9 @@ export type DelphyModeCopy = {
   steps: { n: string; title: string; body: string }[];
   sampleIntro: string;
   sample: ExchangeTurn[];
+  /** Openers for the blank-page problem, phrased the way you would say them. */
+  startersIntro: string;
+  starters: string[];
   roundsHeading: string;
   rounds: { id: string; label: string; body: string }[];
 };
@@ -90,6 +93,14 @@ const RAGEBAIT: DelphyModeCopy = {
       speaker: 'delphy',
       line: 'So which number moved, the work, or the way you count it?',
     },
+  ],
+  startersIntro:
+    'Pick one you would actually argue for. A position you only half hold gives way on the first question and there is nothing to do after that.',
+  starters: [
+    'Microservices are the wrong default for most teams.',
+    'Most meetings could have been a document.',
+    'Code review catches far less than people think.',
+    'Tabs are better than spaces, and it is not close.',
   ],
   roundsHeading: 'Three rounds',
   rounds: [
@@ -165,6 +176,14 @@ const CRITICAL: DelphyModeCopy = {
       speaker: 'delphy',
       line: 'What would you have expected to see instead if remote had made you slower?',
     },
+  ],
+  startersIntro:
+    'Pick something you already believe rather than something you want to work out. The mode is built to examine a conviction, not to manufacture one.',
+  starters: [
+    'Remote work makes engineering teams more productive.',
+    'You should optimise a career for learning, not salary.',
+    'Nuclear is the fastest way to decarbonise a grid.',
+    'A computer science degree is still worth the cost.',
   ],
   roundsHeading: 'Four questions it keeps coming back to',
   rounds: [
