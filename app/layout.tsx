@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { DEFAULT_MODE } from '@/lib/delphy/modes';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -11,7 +12,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Delphy',
   description:
-    "A voice-native devil's advocate that will not tell you what it thinks. Bring a position and defend it. Delphy only ever asks questions.",
+    'A voice-native sparring partner that will not tell you what it thinks. Bring a position and defend it, in critical thinking mode or ragebait mode. Delphy only ever asks questions.',
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -40,7 +41,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    /* data-delphy-mode drives the accent palette in globals.css. Rendering the
+       default here rather than setting it on mount avoids a first-paint flash
+       of the wrong accent; LandingPage updates it when the mode changes. */
+    <html lang="en" className="h-full" data-delphy-mode={DEFAULT_MODE}>
       <body className="h-full min-h-screen antialiased">{children}</body>
     </html>
   );

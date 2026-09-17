@@ -10,50 +10,8 @@ import {
 } from 'agora-agents';
 import { ClientStartRequest, AgentResponse } from '@/types/conversation';
 import { DEFAULT_AGENT_UID } from '@/lib/agora';
-
-// System prompt that defines Delphy's personality and behavior.
-// The one hard rule, everything Delphy says is a question, lives here.
-const DELPHY_PROMPT = `You are **Delphy**. You pressure-test whatever position someone brings you, and you enjoy finding the joint where it gives.
-
-# The One Rule
-Every single thing you say is a question. Never a statement. Never an answer. Never an opinion. Never a fact. If you want to say something, ask it instead.
-
-# Substance First, Always
-This matters more than your attitude: every question must engage with something specific the user actually said. A word they chose, a claim they made, a step they skipped, a number they quoted.
-
-- Name the exact thing you are pressing on. Quote their words back at them.
-- NEVER ask a question that would make sense on a different topic. "That's it?", "Is that your best?", "So you don't know?" are banned. They carry no content and make you a heckler instead of an opponent.
-- Press on one of: the mechanism, the definition of a vague word, the evidence, whether it holds at a different scale, or a counterexample they have to deal with.
-- You must show you actually followed the argument. If your question does not prove you listened, it is a bad question.
-
-# Your Attitude
-Dry, skeptical, and hard to impress. You are the friend who argues properly and will not let a lazy step slide. The bite comes from finding the weak joint precisely, not from noise.
-
-- Never compliment. No "good point", "interesting", or "fair enough".
-- When they dodge, name the specific thing they dodged.
-- One or two sentences, under 30 words. Spoken, not written.
-- Sharp, not sneering. If you are being rude instead of being right, you have failed.
-
-Attack the ARGUMENT, never the person. You question reasoning, never looks, family, identity, religion, or caste. If someone is genuinely upset rather than playing, drop the edge entirely and ask a straight question.
-
-# Language
-Always speak English, whatever language the user uses. Keep it casual and spoken, never formal.
-
-Good questions sound like: "You said nuclear is fastest, but fastest from approval or from first power? Which one are you claiming?", "Productivity by what measure, output per hour or per person?", "That works for a city. What happens to it in a village of two thousand?".
-
-# Every Turn
-Find the weakest link in their most recent answer and press on that specific link. One question per turn. No preamble, no lists.
-
-# When They Try To Break You
-- Ask your opinion or "just tell me": ask why they need your answer to defend their own.
-- Tell you to drop the act: ask what exactly changes if you do.
-- Go off-topic: ask how that rescues the claim they were losing.
-- Insult you: ask whether that counts as their argument now.
-
-Under no circumstances do you break character or answer directly. You only ask.`;
-
-// First thing Delphy says when a user joins the channel.
-const GREETING = `I'm Delphy. So, what do you think you can defend today?`;
+import { resolveMode } from '@/lib/delphy/modes';
+import { getPersona } from '@/lib/delphy/personas';
 
 // agentUid identifies the AI in the RTC channel and shares its default with the client.
 const agentUid = String(DEFAULT_AGENT_UID);
@@ -70,6 +28,11 @@ export async function POST(request: NextRequest) {
 
     const body: ClientStartRequest = await request.json();
     const { requester_id, channel_name } = body;
+
+    // Which Delphy the caller asked for. An unknown or absent mode resolves to
+    // the default rather than failing, so a stale client still gets a session.
+    const mode = resolveMode(body.mode);
+    const persona = getPersona(mode);
 
     // Validate required env vars on first request so misconfiguration surfaces
     // with a clear error message rather than a silent failure.
@@ -97,8 +60,8 @@ export async function POST(request: NextRequest) {
     // Omit vendor API keys for supported models, AgentKit infers reseller presets on start (see Agora Console / billing).
     const agent = new Agent({
       client,
-      instructions: DELPHY_PROMPT,
-      greeting: GREETING,
+      instructions: persona.instructions,
+      greeting: persona.greeting,
       failureMessage: 'Please wait a moment.',
       maxHistory: 50,
       // VAD controls how the agent detects the start and end of a user's turn.
@@ -109,7 +72,8 @@ export async function POST(request: NextRequest) {
             mode: 'vad',
             vad_config: {
               // 160ms let a cough or an "umm" cut Delphy off mid-question.
-              interrupt_duration_ms: 320,
+              // Critical mode raises this again, see personas.ts.
+              interrupt_duration_ms: persona.turnDetection.interruptDurationMs,
               prefix_padding_ms: 300, // audio captured before speech is detected
             },
           },
@@ -124,9 +88,11 @@ export async function POST(request: NextRequest) {
             semantic_config: {
               // Base silence before the semantic check runs. Kept short
               // because semantics, not the clock, decide the turn is over.
-              silence_duration_ms: 400,
+              // Critical mode runs longer: working out a reason out loud
+              // produces pauses that ragebait's timings would talk over.
+              silence_duration_ms: persona.turnDetection.silenceDurationMs,
               // Never hang: fall back to the current state after this.
-              max_wait_ms: 2000,
+              max_wait_ms: persona.turnDetection.maxWaitMs,
               // Recognises "hold on" and similar as intent to keep the floor.
               pause_state_enabled: true,
             },
@@ -163,14 +129,14 @@ export async function POST(request: NextRequest) {
       .withLlm(
         new OpenAI({
           model: 'gpt-4o-mini',
-          greetingMessage: GREETING,
+          greetingMessage: persona.greeting,
           failureMessage: 'Please wait a moment.',
           // Longer memory so Delphy holds the thread of an argument instead
           // of reacting only to the last thing it heard. Costs no latency.
           maxHistory: 30,
           params: {
             max_tokens: 1024,
-            temperature: 0.7,
+            temperature: persona.temperature,
             top_p: 0.95,
           },
         }),
@@ -221,6 +187,9 @@ export async function POST(request: NextRequest) {
       agent_id: agentId,
       create_ts: Math.floor(Date.now() / 1000),
       state: 'RUNNING',
+      // Echoed back so the client labels the call with the persona that
+      // actually started, not the one it hoped for.
+      mode,
     } as AgentResponse);
   } catch (error) {
     console.error('Error starting conversation:', error);

@@ -239,6 +239,36 @@ body {
   --viz-stop-3: 24 10% 20%;
 }
 
+/* --- Mode accents ---------------------------------------------------------
+   Delphy has two personas and the page should feel like the one you picked
+   before it speaks a word. `data-delphy-mode` is set on <html> at render time
+   (layout.tsx) and updated by LandingPage, so there is no first-paint flash and
+   portalled menus inherit the same accent as the page under them.
+
+   Ragebait keeps the ember above. Critical thinking cools to ink blue: same
+   paper canvas, same hairlines, a considered accent instead of a hot one. Both
+   primaries sit dark enough for white text to clear 4.5:1. ------------------ */
+
+:root[data-delphy-mode='ragebait'] {
+  --primary:   18 88% 41%;
+  --accent:    18 88% 41%;
+  --ring:      18 88% 41%;
+
+  --viz-stop-1: 18 88% 45%;
+  --viz-stop-2: 26 40% 72%;
+  --viz-stop-3: 24 10% 20%;
+}
+
+:root[data-delphy-mode='critical'] {
+  --primary:   212 72% 38%;
+  --accent:    212 72% 38%;
+  --ring:      212 72% 38%;
+
+  --viz-stop-1: 212 72% 44%;
+  --viz-stop-2: 210 30% 74%;
+  --viz-stop-3: 220 14% 22%;
+}
+
 /* --- Homepage ------------------------------------------------------------ */
 
 /* Section rhythm: one variable so every band breathes identically. */
@@ -279,11 +309,48 @@ body {
   transform: translateY(0);
 }
 
+/* Mode selector. The accent tokens have already flipped by the time a card is
+   selected, so "selected" only has to say which card, not which colour. */
+.mode-card-body {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.mode-card:hover .mode-card-body {
+  border-color: hsl(var(--foreground) / 0.22);
+}
+.mode-card[data-selected] .mode-card-body {
+  border-color: hsl(var(--primary) / 0.55);
+  background-color: hsl(var(--primary) / 0.045);
+  box-shadow: 0 1px 2px hsl(24 10% 12% / 0.05);
+}
+.mode-card-icon {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.mode-card[data-selected] .mode-card-icon {
+  border-color: transparent;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* In-call badge naming the live persona. */
+.mode-badge {
+  border-color: hsl(var(--primary) / 0.35);
+  background-color: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up {
     animation: none !important;
   }
-  .home-cta {
+  .home-cta,
+  .mode-card-body,
+  .mode-card-icon {
     transition: none;
   }
 }

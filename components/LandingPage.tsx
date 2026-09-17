@@ -10,6 +10,11 @@ import type {
   AgentResponse,
   AgoraRenewalTokens,
 } from '../types/conversation';
+import {
+  DEFAULT_MODE,
+  resolveMode,
+  type DelphyModeId,
+} from '@/lib/delphy/modes';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { HomePage } from './HomePage';
@@ -54,10 +59,22 @@ const AgoraProvider = dynamic(
   { ssr: false },
 );
 
+/** Remembers the last mode picked, so a returning user is not re-asked. */
+const MODE_STORAGE_KEY = 'delphy:mode';
+
 export default function LandingPage() {
   const [showConversation, setShowConversation] = useState(false);
+  const [mode, setMode] = useState<DelphyModeId>(DEFAULT_MODE);
+  // The mode the live agent was actually started with. Kept separate from
+  // `mode` so switching the selector mid-call could never mislabel the call.
+  const [activeMode, setActiveMode] = useState<DelphyModeId>(DEFAULT_MODE);
   // Ensures the agent is only ever asked to stop once per conversation.
   const endingRef = useRef(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [agoraData, setAgoraData] = useState<AgoraTokenData | null>(null);
+  const [rtmClient, setRtmClient] = useState<RTMClient | null>(null);
+  const [agentJoinError, setAgentJoinError] = useState(false);
 
   // Preload heavy modules on mount so they're already cached when the user
   // clicks "Try it Now", eliminates the ~1.8s dynamic-import delay.
@@ -65,11 +82,37 @@ export default function LandingPage() {
     import('agora-rtc-react').catch(() => {});
     import('agora-rtm').catch(() => {});
   }, []);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [agoraData, setAgoraData] = useState<AgoraTokenData | null>(null);
-  const [rtmClient, setRtmClient] = useState<RTMClient | null>(null);
-  const [agentJoinError, setAgentJoinError] = useState(false);
+
+  // Restore the remembered mode after hydration. Reading storage during render
+  // would make the server and client markup disagree, so it happens in an
+  // effect and simply repaints if the stored mode differs from the default.
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
+      if (stored) setMode(resolveMode(stored));
+    } catch {
+      // Private mode or blocked storage, the default is fine.
+    }
+  }, []);
+
+  // `data-delphy-mode` on <html> drives the accent palette (see globals.css).
+  // Setting it here rather than on a wrapper keeps portalled menus in the same
+  // accent as the page beneath them. In call it follows the persona that
+  // actually started, which is not always the one the selector was showing.
+  useEffect(() => {
+    document.documentElement.dataset.delphyMode = showConversation
+      ? activeMode
+      : mode;
+  }, [mode, activeMode, showConversation]);
+
+  const handleModeChange = useCallback((next: DelphyModeId) => {
+    setMode(next);
+    try {
+      window.localStorage.setItem(MODE_STORAGE_KEY, next);
+    } catch {
+      // Not being able to remember the choice is not worth failing over.
+    }
+  }, []);
 
   const handleStartConversation = async () => {
     setIsLoading(true);
@@ -117,6 +160,7 @@ export default function LandingPage() {
           body: JSON.stringify({
             requester_id: responseData.uid,
             channel_name: responseData.channel,
+            mode,
           } as ClientStartRequest),
         })
           .then(async (res) => {
@@ -146,8 +190,11 @@ export default function LandingPage() {
         })(),
       ]);
 
-      // 3. All dependencies ready, store state and show conversation
+      // 3. All dependencies ready, store state and show conversation.
+      //    The server echoes the mode it resolved; trust that over the request
+      //    so the in-call badge names the persona that actually started.
       setRtmClient(rtm);
+      setActiveMode(resolveMode(agentData?.mode ?? mode));
       setAgoraData({ ...responseData, agentId: agentData?.agent_id });
       endingRef.current = false;
       setShowConversation(true);
@@ -230,6 +277,8 @@ export default function LandingPage() {
   if (!showConversation) {
     return (
       <HomePage
+        mode={mode}
+        onModeChange={handleModeChange}
         isLoading={isLoading}
         error={error}
         onStartConversation={handleStartConversation}
@@ -257,6 +306,7 @@ export default function LandingPage() {
                   <AgoraProvider>
                     <ConversationComponent
                       agoraData={agoraData}
+                      mode={activeMode}
                       rtmClient={rtmClient}
                       onTokenWillExpire={handleTokenWillExpire}
                       onEndConversation={handleEndConversation}

@@ -95,6 +95,7 @@ function isRtmSalStatusPayload(value: unknown): value is RtmSalStatusPayload {
 
 export default function ConversationComponent({
   agoraData,
+  mode,
   rtmClient,
   onTokenWillExpire,
   onEndConversation,
@@ -549,6 +550,7 @@ export default function ConversationComponent({
 
   return (
     <QuickstartConversationLayout
+      mode={mode}
       statusPanel={
         <ConnectionStatusPanel
           connectionState={connectionState}

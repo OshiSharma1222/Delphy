@@ -1,32 +1,24 @@
-const ROUNDS = [
-  {
-    id: '01',
-    label: 'Opening',
-    body: 'It finds out what you are defending, and what you actually believe about it.',
-  },
-  {
-    id: '02',
-    label: 'Pressure',
-    body: 'It picks the softest part of your last answer and stays there until it gives.',
-  },
-  {
-    id: '03',
-    label: 'Closing',
-    body: 'It tests whether the position you are left holding is still the one you walked in with.',
-  },
-];
+import { MODE_COPY, type DelphyModeId } from '@/lib/delphy/modes';
 
-export function HomeRounds() {
+type HomeRoundsProps = {
+  mode: DelphyModeId;
+};
+
+export function HomeRounds({ mode }: HomeRoundsProps) {
+  const copy = MODE_COPY[mode];
+
   return (
     <section id="rounds" className="home-section mx-auto w-full max-w-5xl px-6">
       <h2 className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
-        Three rounds
+        {copy.roundsHeading}
       </h2>
 
-      <div className="mt-12 grid gap-4 sm:grid-cols-3">
-        {ROUNDS.map((round) => (
+      {/* Ragebait runs three rounds, critical thinking four questions, so the
+          grid follows the content rather than assuming a fixed count. */}
+      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]">
+        {copy.rounds.map((round) => (
           <article
-            key={round.id}
+            key={`${mode}-${round.id}`}
             className="rounded-2xl border border-border bg-card p-7"
           >
             <div className="flex items-baseline gap-2.5">

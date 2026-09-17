@@ -1,8 +1,18 @@
 # Delphy
 
-A voice-native devil's advocate. Bring a position you actually hold, say it out
-loud, and Delphy answers only in questions — going straight for the weakest
-thing you just said. It never states, never agrees, never takes a side.
+A voice-native sparring partner. Bring a position you actually hold, say it out
+loud, and Delphy answers only in questions. It never states, never agrees, never
+takes a side.
+
+Two modes decide what the questions are *for*:
+
+| Mode | Persona | What it goes after |
+| --- | --- | --- |
+| **Critical thinking** (default) | Socratic examiner | Why you believe it, why not the other thing, what you are assuming, what would change your mind |
+| **Ragebait** | Devil's advocate | The weakest joint in the last thing you said, and it stays there |
+
+The mode is picked before the call starts and fixed for its duration, because
+the persona is baked into the agent at invite time.
 
 Built on [Agora's Conversational AI Engine](https://docs.agora.io): a real-time
 ASR → LLM → TTS pipeline running over Agora's SD-RTN, with transcripts and agent
@@ -60,7 +70,7 @@ flowchart TB
         TTS["MiniMax speech_2_6_turbo"]
     end
 
-    HP -->|"Take the stand"| LP
+    HP -->|"mode + start"| LP
     LP --> TOK
     LP --> INV
     LP --> STOP
@@ -102,15 +112,15 @@ sequenceDiagram
     participant AG as Agora ConvoAI
     participant CC as ConversationComponent
 
-    U->>LP: Click "Take the stand"
+    U->>LP: Pick a mode, then start
     LP->>API: GET /api/generate-agora-token
     API-->>LP: token, uid, channel
 
     par Agent invite
-        LP->>API: POST /api/invite-agent
+        LP->>API: POST /api/invite-agent {mode}
         API->>AG: agent.createSession().start()
         AG-->>API: agent_id
-        API-->>LP: agent_id, state RUNNING
+        API-->>LP: agent_id, state RUNNING, resolved mode
     and RTM setup
         LP->>AG: rtm.login(token)
         LP->>AG: rtm.subscribe(channel)
@@ -162,12 +172,14 @@ classDiagram
     class ClientStartRequest {
         +string requester_id
         +string channel_name
+        +DelphyModeId mode
     }
 
     class AgentResponse {
         +string agent_id
         +number create_ts
         +string state
+        +DelphyModeId mode
     }
 
     class StopConversationRequest {
@@ -181,6 +193,7 @@ classDiagram
 
     class ConversationComponentProps {
         +AgoraTokenData agoraData
+        +DelphyModeId mode
         +RTMClient rtmClient
         +onTokenWillExpire(uid) Promise
         +onEndConversation() void
@@ -239,12 +252,45 @@ stateDiagram-v2
 
 ---
 
+## Modes
+
+`lib/delphy/modes.ts` is the shared half: ids, the default, and every piece of
+copy the homepage swaps when you change the selector. It is imported by the
+browser, so it holds no prompts.
+
+`lib/delphy/personas.ts` is the server half: the system prompt, the greeting,
+the sampling temperature, and the turn-detection timings for each mode. Nothing
+in the client bundle imports it.
+
+```mermaid
+flowchart LR
+    SEL["HomeModeSwitch<br/>radio pair"] --> LPS["LandingPage<br/>mode state"]
+    LPS -->|"localStorage"| LPS
+    LPS -->|"data-delphy-mode on html"| CSS["globals.css<br/>accent palette"]
+    LPS -->|"POST mode"| INV["/api/invite-agent"]
+    INV --> RES["resolveMode()"]
+    RES --> PER["getPersona()<br/>prompt, greeting, VAD"]
+    PER --> AGENT["Agent config"]
+    INV -->|"resolved mode"| BADGE["in-call header badge"]
+```
+
+An unknown or absent `mode` resolves to the default rather than 400-ing, so an
+older client still gets a session. The route echoes the mode it actually used,
+and the client labels the call from that echo rather than from its own request.
+
+The two personas differ in more than wording. Critical thinking runs a lower
+temperature, because its questions follow a sequence and wandering hurts, and
+every turn-detection timing is more patient: working out a reason out loud
+produces pauses that ragebait's timings would talk straight over.
+
+---
+
 ## Not yet wired
 
-`lib/delphy/` holds the round-progression design — pure functions with **no
-importers outside that folder**. The live agent currently runs from the single
-`DELPHY_PROMPT` system prompt in `app/api/invite-agent/route.ts`, and the
-`01 / 02 / 03` rail on the homepage is static.
+`roundState.ts`, `prompts.ts`, `sessionStore.ts`, and `guardRail.ts` hold the
+round-progression design — pure functions with **no importers outside that
+folder**. The live agent runs from the mode persona described above and does not
+score turns, so the rail on the homepage is static copy.
 
 The same applies to `app/api/chat/completions/` — a working OpenAI-compatible
 custom-LLM endpoint that the agent config does not point at, because `withLlm`
@@ -292,15 +338,17 @@ app/
     stop-conversation/          idempotent agent teardown
     chat/completions/           custom-LLM endpoint (not wired)
 components/
-  LandingPage.tsx               session bootstrap, view switch
+  LandingPage.tsx               session bootstrap, mode state, view switch
   HomePage.tsx                  pre-call homepage composition
-  home/                         nav, hero, how-it-works, sample, rounds, footer
+  home/                         nav, hero, mode switch, how-it-works, sample, rounds, footer
   ConversationComponent.tsx     in-call join, publish, transcripts, teardown
   ConnectionStatusPanel.tsx     connection state and captured issues
   MicrophoneSelector.tsx        input-device switching
 lib/
   agora.ts                      DEFAULT_AGENT_UID
   conversation.ts               transcript normalisation, state mapping
+  delphy/modes.ts               mode ids and homepage copy (client-safe)
+  delphy/personas.ts            per-mode prompt, greeting, VAD tuning (server)
   delphy/                       round logic and guardrail (not wired)
 types/
   conversation.ts               shared API and prop types

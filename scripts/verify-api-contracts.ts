@@ -1,6 +1,8 @@
 import { AgoraClient, Agent } from 'agora-agents';
 import { RtcTokenBuilder } from 'agora-token';
 import { NextRequest } from 'next/server';
+import { DEFAULT_MODE } from '../lib/delphy/modes';
+import { getPersona } from '../lib/delphy/personas';
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
@@ -381,6 +383,75 @@ async function verifyInviteAgentSuccess() {
   }
 }
 
+function stubCreateSession() {
+  const original = Agent.prototype.createSession;
+  Agent.prototype.createSession = (() => ({
+    start: async () => 'mock-agent-id',
+  })) as unknown as typeof Agent.prototype.createSession;
+  return () => {
+    Agent.prototype.createSession = original;
+  };
+}
+
+async function inviteWithMode(mode: unknown) {
+  const { POST: inviteAgent } = await import('../app/api/invite-agent/route');
+  const restore = stubCreateSession();
+
+  try {
+    const request = new NextRequest('http://localhost:3000/api/invite-agent', {
+      body: JSON.stringify({
+        requester_id: 'user-4321',
+        channel_name: 'test-channel',
+        mode,
+      }),
+      method: 'POST',
+    });
+    return await getJson(await inviteAgent(request));
+  } finally {
+    restore();
+  }
+}
+
+async function verifyInviteAgentEchoesRequestedMode() {
+  const body = await inviteWithMode('ragebait');
+
+  assert(
+    body.mode === 'ragebait',
+    'POST /api/invite-agent should start and report the requested mode',
+  );
+}
+
+async function verifyInviteAgentFallsBackToDefaultMode() {
+  const unknownMode = await inviteWithMode('not-a-mode');
+  const absentMode = await inviteWithMode(undefined);
+
+  assert(
+    unknownMode.mode === DEFAULT_MODE,
+    'POST /api/invite-agent should fall back to the default mode for an unknown mode',
+  );
+  assert(
+    absentMode.mode === DEFAULT_MODE,
+    'POST /api/invite-agent should fall back to the default mode when none is sent',
+  );
+}
+
+function verifyPersonasDiffer() {
+  const ragebait = getPersona('ragebait');
+  const critical = getPersona('critical');
+
+  assert(
+    ragebait.instructions !== critical.instructions &&
+      ragebait.greeting !== critical.greeting,
+    'The two modes must carry distinct instructions and greetings',
+  );
+  assert(
+    critical.turnDetection.silenceDurationMs >
+      ragebait.turnDetection.silenceDurationMs &&
+      critical.turnDetection.maxWaitMs > ragebait.turnDetection.maxWaitMs,
+    'Critical mode must wait longer than ragebait before ending a turn',
+  );
+}
+
 async function verifyStopConversationValidation() {
   const { POST: stopConversation } =
     await import('../app/api/stop-conversation/route');
@@ -453,6 +524,9 @@ async function main() {
   await verifyChatCompletionsSseDone();
   await verifyInviteAgentValidation();
   await verifyInviteAgentSuccess();
+  await verifyInviteAgentEchoesRequestedMode();
+  await verifyInviteAgentFallsBackToDefaultMode();
+  verifyPersonasDiffer();
   await verifyStopConversationValidation();
   await verifyStopConversationSuccess();
 

@@ -3,8 +3,10 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { MODE_COPY, type DelphyModeId } from '@/lib/delphy/modes';
 
 type QuickstartConversationLayoutProps = {
+  mode: DelphyModeId;
   statusPanel: ReactNode;
   pipelineMetrics: ReactNode;
   transcriptPanel: ReactNode;
@@ -14,6 +16,7 @@ type QuickstartConversationLayoutProps = {
 };
 
 export function QuickstartConversationLayout({
+  mode,
   statusPanel,
   pipelineMetrics,
   transcriptPanel,
@@ -32,10 +35,17 @@ export function QuickstartConversationLayout({
             height={40}
             className="h-10 w-10 shrink-0 object-contain"
           />
-          <div className="flex min-w-0 flex-col justify-center gap-1">
-            <span className="truncate text-lg font-semibold leading-none tracking-[-0.025em] text-foreground">
-              Agora Conversational AI
-            </span>
+          <div className="flex min-w-0 flex-col justify-center gap-1.5">
+            {/* Which Delphy is on the line. Without this the two personas are
+                indistinguishable until the agent speaks. */}
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-serif text-lg leading-none tracking-[-0.015em] text-foreground">
+                Delphy
+              </span>
+              <span className="mode-badge shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em]">
+                {MODE_COPY[mode].name}
+              </span>
+            </div>
             {pipelineMetrics}
           </div>
         </div>
